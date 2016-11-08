@@ -1737,8 +1737,6 @@ int main ( )
 
 			}
 
-			//writeVecToFile(ff, "/home/lengelen/Desktop/test/pixels"+to_string(i)+".txt");
-
 			//Change frame-optimizer depending on corners found or not
 			if(Detection[0]){
 				if(Detection[1] &&check2 ){
