@@ -2,33 +2,38 @@
 <opencv_storage>
 <Settings>
   <!-- Number of inner corners per a item row and column. (square)  -->
-  <BoardSize_Width>11</BoardSize_Width>
-  <BoardSize_Height>33</BoardSize_Height>
+  <BoardSize_Width>5</BoardSize_Width>
+  <BoardSize_Height>17</BoardSize_Height>
+  <PatternSize_Width>5</PatternSize_Width>
+  <PatternSize_Height>17</PatternSize_Height>
   
   <!-- The size of a square in some user defined metric system (pixel, millimeter)-->
-  <Square_Size>5</Square_Size>
+  <Square_Size>10</Square_Size>
     <!-- Length scale in x-direction (crosswise direction)(mm)-->
-  <Lx>50</Lx>
+  <Lx>40</Lx>
      <!-- Length scale in y-direction (streamwise direction)(mm)-->
   <Ly>160</Ly>
 
   
   <!-- The threshold parameter for response strength corners-->
-  <ResponseThreshold>180</ResponseThreshold>
+  <ResponseThreshold>300</ResponseThreshold>
   <!-- The min distance in pixels between corner points-->
-  <MinDistance>15</MinDistance>
-    <!-- The readius to calculate corner response: 5 or 10 currently possible -->
+  <MinDistance>30</MinDistance>
+    <!-- The radius to calculate corner response: 5 or 10 currently possible -->
   <responseRadius>5</responseRadius>
+      <!-- The max distance between located and predicted feature point -->
+  <MatchesThreshold>10</MatchesThreshold>
   
   <!-- Amount of camera's-->
   <CameraAmount>1</CameraAmount>
   <!-- Error metric used-->
-  <ErrorMetric>1</ErrorMetric>
+  <ErrorMetric>2</ErrorMetric>
   <!-- Amount of parameters used-->
   <SurfaceModel>8</SurfaceModel>
-  <!-- Optical flow guess used if not found-->
-  <Opticalflowguess>0</Opticalflowguess>
-  <!-- Set initial guess for coefficients model-->
+    <!-- Amount of threads used-->
+  <ThreadAmount>6</ThreadAmount>
+
+  <!-- change Initial guess (final water level)-->
   <setInitialGuess>0</setInitialGuess>
   <!-- Set optimization parameters-->
   <setOptim>0</setOptim>
@@ -36,55 +41,58 @@
   <showCorners>0</showCorners>
   <!-- Save errors in text file-->
   <saveErrors>1</saveErrors>
+    <!-- Save feature coordinates in text file-->
+  <saveFeatureCoordinates>1</saveFeatureCoordinates>
     <!-- Save camera pose estimation in text file-->
   <saveCameraPose>1</saveCameraPose>
 
   <!-- Type of reference input: image->true:1, file->false:0-->
-  <InputTypeRef>0</InputTypeRef>
+  <InputTypeRef>1</InputTypeRef>
   <!-- Type of input: images->true:1, file->false:0-->
-  <InputType>1</InputType>
+  <InputType>0</InputType>
   <!-- Fixed location of points f-->
-  <InputInitial>/home/lengelen/Documents/Thesis/cam1/Features</InputInitial>
-  
-  <!-- The name of the input file of camera 1-->
-  <InputFilename1>"/home/lengelen/Desktop/test/coordinates.txt"</InputFilename1>
-  <!-- The name of the input file of camera 2-->
-  <InputFilename2>"/home/lengelen/Desktop/MS_20160524/m5/86/GRAY"</InputFilename2>
-  <!-- The name of the input file of camera 3-->
-  <InputFilename3>"/home/lengelen/Desktop/Ms09052016/Processed/C84/M5"</InputFilename3>
+  <InputInitial>"/home/lengelen/Documents/PRE_PROCESS/FeaturesF.txt"</InputInitial>
   
   <!-- The name of the input directory of camera 1-->
-  <InputDirectory1>"/home/lengelen/Documents/Doctoraat/PhDMS1-adapted/M10/Shift15"</InputDirectory1>
+  <InputDirectory1>"/home/lengelen/Documents/RESULTS/FEATURES/CAM1"</InputDirectory1>
   <!-- The name of the input directory of camera 2-->
   <InputDirectory2>"/home/lengelen/Desktop/MS_20160524/m5/86/GRAY"</InputDirectory2>
   <!-- The name of the input directory of camera 3-->
   <InputDirectory3>"/home/lengelen/Desktop/Ms09052016/Processed/C84/M5"</InputDirectory3>
   
   <!-- The name of the reference image/file - camera 1-->
-  <InputReference1>"/home/lengelen/Desktop/test/CameraPose1.txt"</InputReference1>
+  <InputReference1>"/home/lengelen/Documents/PRE_PROCESS/REF.png"</InputReference1>
   <!-- The name of the reference image - camera 2-->
   <InputReference2>"/home/lengelen/Documents/Doctoraat/PhDMS1-adapted/Reference/REF15-small.png"</InputReference2>
   <!-- The name of the reference image - camera 3-->
   <InputReference3>"/home/lengelen/Desktop/Ms09052016/Processed/Ref84/Result of Ref84 (green)-10000.png"</InputReference3>
   
   <!-- The name of the calibration file of the camera 1-->
-  <CalibrationFile1>"/home/lengelen/Documents/Calib/Calib_C86.yml"</CalibrationFile1>
+  <CalibrationFile1>"/home/lengelen/Documents/PRE_PROCESS/Calib_C86.yml"</CalibrationFile1>
   <!-- The name of the calibration file of the camera 2-->
   <CalibrationFile2>"/home/lengelen/Documents/Calibration/Calib_C86_20160509-rotation.yml"</CalibrationFile2>
   <!-- The name of the calibration file of the camera 3-->
   <CalibrationFile3>"/home/lengelen/Documents/Calibration/Calib_C84_20160428.yml"</CalibrationFile3>
   
   <!-- The name of ouput file for optimized coefficients according to chosen surface model-->
-  <OutputFileName>"/home/lengelen/Desktop/test/coeffsM10.txt"</OutputFileName>
+  <OutputFileName>"/home/lengelen/Documents/RESULTS/coeffs.txt"</OutputFileName>
   <!-- The name of ouput file for average error per frame-->
-  <OutputFileNameErrors>"/home/lengelen/Desktop/test/coeffsM10_errors.txt"</OutputFileNameErrors>
-    <!-- The name of ouput file for saving camera pose estimation camera 1-->
-  <OutputCameraPose1>"/home/lengelen/Desktop/test/CameraPose1.txt"</OutputCameraPose1>
-   <!-- The name of ouput file for saving camera pose estimation camera 2-->
+  <OutputFileNameErrors>"/home/lengelen/Documents/RESULTS/errors.txt"</OutputFileNameErrors>
+  
+  <!-- The name of ouput file for saving camera pose estimation camera 1-->
+  <OutputCameraPose1>"/home/lengelen/Documents/RESULTS/camerapose.txt"</OutputCameraPose1>
+  <!-- The name of ouput file for saving camera pose estimation camera 2-->
   <OutputCameraPose2>"/home/lengelen/Desktop/test/CameraPose2.txt"</OutputCameraPose2>
-   <!-- The name of ouput file for saving camera pose estimation camera 3-->
+  <!-- The name of ouput file for saving camera pose estimation camera 3-->
   <OutputCameraPose3>"/home/lengelen/Desktop/test/CameraPose3.txt"</OutputCameraPose3>
   
+  <!-- The name of ouput directory for saving feature coordinates camera 1-->
+  <OutputDirectory1>"/home/lengelen/Documents/RESULTS/FEATURES"</OutputDirectory1>
+  <!-- The name of ouput directory for saving feature coordinates camera 2-->
+  <OutputDirectory2>"/home/lengelen/Desktop/test/CameraPose2.txt"</OutputDirectory2>
+  <!-- The name of ouput directory for saving feature coordinates camera 3-->
+  <OutputDirectory3>"/home/lengelen/Desktop/test/CameraPose3.txt"</OutputDirectory3>
+    
   <!-- Position camera 1-->
   <Position1>1</Position1>
   <!-- Position camera 2-->
