@@ -3,53 +3,57 @@
 
 
 static inline void read(const FileNode& node, Settings& x, const Settings& default_value = Settings())
-{///reads node in settings file and stores it in variable
+{// Reads node in settings file and stores it in variable
     if(node.empty())
         x = default_value;
     else
         x.read(node);
 }
 inline string ToString(size_t sz) {
-
+// Converts size_t object to string object
   stringstream ss;
   ss << sz;
   return ss.str();
 }
+
 /// Definition template classes
 
 template <class Type> class worldCoords
-{ ///Determines world coordinates (3D Float) of image point in vector 3-Float format (homog)
+{ // Determines world coordinates (3D Float) of image point in vector 3-Float format (homog)
 private:
-    Mat RR, TT, KK;   // inverse matrices
+    Mat RR, T, KK;   // inverse camera matrices
 public:
     // Constructor
-    worldCoords (Mat i_RR, Mat i_TT, Mat i_KK) {
-
+    worldCoords (Mat i_RR, Mat i_T, Mat i_KK) {
         RR=i_RR;
-        TT=i_TT;
+        T=i_T;
         KK=i_KK;
     }
 
     // The function call
     Type operator ( ) ( Point3f& elem ) const
-    {	Mat q=Mat(elem).reshape(1,3);
+    {
+    	// Change elem to matrix object to perform calculations
+    	Mat q=Mat(elem).reshape(1,3);
         q.convertTo(q, CV_64F);
 
-        Mat result= (RR * (KK*q-TT));
+    	// Compute result
+        Mat result= (RR * (KK*q-T));
+
+        // Convert result to Point3f
         Mat resultf;
         result.convertTo(resultf, CV_32F);
-        Point3f resultt =Point3f(resultf.at<float>(0,0),resultf.at<float>(1,0), resultf.at<float>(2,0));
-        return resultt;
+        return Point3f(resultf.at<float>(0,0),resultf.at<float>(1,0), resultf.at<float>(2,0));
+
      }
 };
 template <class Type> class pixelCoordinates
-{ ///Determines pixel coordinates of 3D point (float), output 3Float (homog)
+{ // Determines pixel coordinates of 3D point (float), output 3Float (homog)
 private:
-    Mat R, T, K;   // inverse matrices
+    Mat R, T, K;   // camera matrices
 public:
     // Constructor
     pixelCoordinates (Mat i_R, Mat i_T, Mat i_K) {
-
         R=i_R;
         T=i_T;
         K=i_K;
@@ -58,38 +62,41 @@ public:
     // The function call
     Type operator ( ) ( Point3f& elem ) const
     {
-
+    	// Change elem to matrix object to perform calculations
     	Mat q=Mat(elem).reshape(1,3);
     	q.convertTo(q, CV_64F);
+
+    	// Compute result
         Mat result= (K * (R*q+T));
+
+        // Convert result to Point3f
         Mat resultf;
         result.convertTo(resultf, CV_32F);
-        Point3f resultt= Point3f(resultf.at<float>(0,0)/ resultf.at<float>(2,0),resultf.at<float>(1,0)/ resultf.at<float>(2,0),1.0);
-        return resultt;
-    }
+        return Point3f(resultf.at<float>(0,0)/ resultf.at<float>(2,0),resultf.at<float>(1,0)/ resultf.at<float>(2,0),1.0);
+        }
 };
 template <class Type> class Ray
-{ ///Computes ray direction (3D Float) between c and image point (not normalized)
+{ // Computes ray direction (3D Float) between c and image point
+  // Resulting 3f vector is normalized
         private:
             Point3f c;   // Camera position
         public:
             // Constructor
             Ray (Point3f i_c) {
-
                 c=i_c;
             }
 
             // The function call
             Type operator ( ) ( Point3f& elem ) const
             {
-                  Point3f result= Point3f(elem.x-c.x,elem.y-c.y, elem.z-c.z);
-                  return result;
+            	Point3f res=Point3f(elem.x-c.x,elem.y-c.y, elem.z-c.z);
+            	return res/norm(res);
             }
 };
 template <class Type> class Normals_2ndorder
-{  ///Computes normalized n2 fo set of 8 coeffcieints at position of point (3D Float)
+{  // Computes normalized n2 of set of 8 coefficients at position of surface point (3D Float)
         private:
-            real_1d_array coef; double Lx; double Ly;   // Camera position
+            real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
         public:
             // Constructor
             Normals_2ndorder (real_1d_array i_coef, double i_Lx, double i_Ly) {
@@ -102,17 +109,36 @@ template <class Type> class Normals_2ndorder
             Type operator ( ) ( Point3f& elem ) const
             {
 
-                Mat n= (Mat_<float>(3,1)<< 2*PI_F/Lx*coef[5]*sin(2*PI_F*elem.x/Lx)+PI_F/Lx*coef[7]*sin(PI_F*elem.x/Lx)*cos(PI_F*elem.y/Ly)+PI_F/Lx*coef[1]*sin(PI_F*elem.x/Lx)-coef[3]/Lx, 2*PI_F/Ly*coef[6]*sin(2*PI_F*elem.y/Ly)+PI_F/Ly*coef[7]*cos(PI_F*elem.x/Lx)*sin(PI_F*elem.y/Ly)+PI_F/Ly*coef[2]*sin(PI_F*elem.y/Ly)-coef[4]/Ly, 1);
-                float nn =norm(n, NORM_L2);
-                Point3f res= Point3f(n.at<float>(0,0)/nn, n.at<float>(1,0)/nn, n.at<float>(2,0)/nn);
+               Point3f n= Point3f(2*PI_F/Lx*coef[5]*sin(2*PI_F*elem.x/Lx)+PI_F/Lx*coef[7]*sin(PI_F*elem.x/Lx)*cos(PI_F*elem.y/Ly)+PI_F/Lx*coef[1]*sin(PI_F*elem.x/Lx)-coef[3]/Lx, 2*PI_F/Ly*coef[6]*sin(2*PI_F*elem.y/Ly)+PI_F/Ly*coef[7]*cos(PI_F*elem.x/Lx)*sin(PI_F*elem.y/Ly)+PI_F/Ly*coef[2]*sin(PI_F*elem.y/Ly)-coef[4]/Ly, 1);
+               return n/norm(n);
 
-                return res;
+            }
+        };
+template <class Type> class Normals_3rdorder
+{  // Computes normalized n2 of set of 12 coefficients at position of surface point (3D Float)
+        private:
+            real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
+        public:
+            // Constructor
+            Normals_3rdorder (real_1d_array i_coef, double i_Lx, double i_Ly) {
+                coef=i_coef;
+                Lx=i_Lx;
+                Ly=i_Ly;
+            }
+
+            // The function call
+            Type operator ( ) ( Point3f& elem ) const
+            {
+
+               Point3f n= Point3f(3*PI_F/Lx*coef[8]*sin(3*PI_F*elem.x/Lx)+2*PI_F/Lx*coef[5]*sin(2*PI_F*elem.x/Lx)+2*PI_F/Lx*coef[10]*sin(2*PI_F*elem.x/Lx)*cos(PI_F*elem.y/Ly)+PI_F/Lx*coef[7]*sin(PI_F*elem.x/Lx)*cos(PI_F*elem.y/Ly)+PI_F/Lx*coef[1]*sin(PI_F*elem.x/Lx)-coef[3]/Lx, 3*PI_F/Ly*coef[9]*sin(3*PI_F*elem.y/Ly)+2*PI_F/Ly*coef[6]*sin(2*PI_F*elem.y/Ly)+PI_F/Ly*coef[7]*cos(PI_F*elem.x/Lx)*sin(PI_F*elem.y/Ly)+2*coef[11]*cos(PI_F*elem.x/Lx)*sin(2*PI_F*elem.y/Ly)+PI_F/Ly*coef[2]*sin(PI_F*elem.y/Ly)-coef[4]/Ly, 1);
+               return n/norm(n);
+
             }
         };
 template <class Type> class Angle
-{ ///Computes thetai for given thetadelta and rw
+{ // Computes theta_i for given theta_delta and rw
     private:
-        double rw;
+        double rw; // Refractive index of water
 
     public:
             // Constructor
@@ -123,12 +149,11 @@ template <class Type> class Angle
             // The function call
             Type operator ( ) ( double& theta ) const
             {
-                double res= atan((rw*sin(theta))/(rw*cos(theta)-1));
-                return res;
+                return atan((rw*sin(theta))/(rw*cos(theta)-1));
             }
         };
 template <class Type> class Angle2
-{ ///Computes thetadelta for given thetai and rw
+{ // Computes theta_delta for given theta_i and rw
     private:
         double rw;
 
@@ -142,15 +167,14 @@ template <class Type> class Angle2
             Type operator ( ) ( double& theta ) const
             {
 
-                double res=	theta - asin(sin(theta)/rw);
-                return res;
+               return (theta - asin(sin(theta)/rw));
             }
         };
 template <class Type> class waterSurface_2ndorder
-{ ///Finds surface point for set of 8 coefficients and ray u=cq' (all 3D Float)
+{ // Finds surface point for set of 8 coefficients and ray u=cq' (all 3D Float)
 
         private:
-		real_1d_array coef; Point3f c;  double Lx; double Ly;
+		real_1d_array coef; Point3f c;  double Lx; double Ly; // Characterization of surface model
 
         public:
             // Constructor
@@ -164,7 +188,7 @@ template <class Type> class waterSurface_2ndorder
             // The function call
             Type operator ( ) ( Point3f& ray ) const
             {
-
+            	// Parameters/variables used by Hybrid to solve non-linear problem
                 double *fvec;
                 int iflag=1;
                 int lwa;
@@ -177,16 +201,17 @@ template <class Type> class waterSurface_2ndorder
                 lwa = ( n * ( 3 * n + 13 ) ) / 2;
 
                 fvec = new double[n];
-
                 wa = new double[lwa];
                 x = new double[n];
                 parameters = new double [16];
 
+                // Initial guess
                 x[0] = 1500;
                 x[1] = 0;
                 x[2] = 0;
                 x[3] = 0;
 
+                // Additional input information passed by pointer
                 parameters[0] = c.x;
                 parameters[1] = c.y;
                 parameters[2] = c.z;
@@ -204,8 +229,10 @@ template <class Type> class waterSurface_2ndorder
 				parameters[14] = coef[6];
 				parameters[15] = coef[7];
 
+				// Initialization
                 findIntersection_2ndorder( n, x, fvec, &iflag, parameters );
 
+                // Optimization
                 int info = hybrd1 ( findIntersection_2ndorder, n, x, fvec, parameters, tol, wa, lwa );
                 Point3f result =Point3f(x[1],x[2],x[3]);
                 delete[] fvec;
@@ -215,72 +242,145 @@ template <class Type> class waterSurface_2ndorder
                 return result;
                 }
         };
+template <class Type> class waterSurface_3rdorder
+{ // Finds surface point for set of 12 coefficients and ray u=cq' (all 3D Float)
+
+	private:
+	real_1d_array coef; Point3f c;  double Lx; double Ly; // Characterization of surface model
+
+	public:
+		// Constructor
+	waterSurface_3rdorder (Point3f i_c, double i_Lx, double i_Ly, real_1d_array i_coef) {
+			coef=i_coef;
+			c=i_c;
+			Lx=i_Lx;
+			Ly=i_Ly;
+		}
+
+		// The function call
+		Type operator ( ) ( Point3f& ray ) const
+		{
+			// Parameters/variables used by Hybrid to solve non-linear problem
+			double *fvec;
+			int iflag=1;
+			int lwa;
+			int n = 4;
+			double tol = 0.00001;
+			double *wa;
+			double *x;
+			double *parameters;
+
+			lwa = ( n * ( 3 * n + 13 ) ) / 2;
+
+			fvec = new double[n];
+			wa = new double[lwa];
+			x = new double[n];
+			parameters = new double [20];
+
+			// Initial guess
+			x[0] = 1500;
+			x[1] = 0;
+			x[2] = 0;
+			x[3] = 0;
+
+			// Additional input information passed by pointer
+			parameters[0] = c.x;
+			parameters[1] = c.y;
+			parameters[2] = c.z;
+			parameters[3] = ray.x;
+			parameters[4] = ray.y;
+			parameters[5] = ray.z;
+			parameters[6] = Lx;
+			parameters[7] = Ly;
+			parameters[8] = coef[0];
+			parameters[9] = coef[1];
+			parameters[10] = coef[2];
+			parameters[11] = coef[3];
+			parameters[12] = coef[4];
+			parameters[13] = coef[5];
+			parameters[14] = coef[6];
+			parameters[15] = coef[7];
+			parameters[16] = coef[8];
+			parameters[17] = coef[9];
+			parameters[18] = coef[10];
+			parameters[19] = coef[11];
+
+			// Initialization
+			findIntersection_3rddorder( n, x, fvec, &iflag, parameters );
+
+			// Optimization
+			int info = hybrd1 ( findIntersection_3rdorder, n, x, fvec, parameters, tol, wa, lwa );
+			Point3f result =Point3f(x[1],x[2],x[3]);
+			delete[] fvec;
+			delete[] wa;
+			delete[] x;
+			delete[] parameters;
+			return result;
+			}
+	};
 template <class T> struct prod
-{ /// computes angle between two vectors by dot product ->for thetad
+{ // Computes angle between two vectors by dot product (used to compute theta_d)
     T operator() (Point3f& uu, Point3f& vv) const {
 
-    	double res= acos(uu.ddot(vv));
-
-    	return res;}
+    	return acos(uu.ddot(vv));
+    	}
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
     };
 template <class T> struct prod2
-{/// computes angle between two vectors by dot product but reverses one vector in direction -> for u and n (thetai)
+{// Computes angle between two vectors by dot product but reverses one vector in direction (used for u and n (thetai))
     T operator() (Point3f& u, Point3f& n) const {
 
     	Point3f uu=Point3f(-u.x,-u.y,-u.z);
-    	double res= acos(uu.ddot(n));
-
-    	return res;}
+    	return acos(uu.ddot(n));
+    	}
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
     };
 template <class T> struct error_col
-{ ///Computes normal collinearity metric
+{ // Computes normal collinearity metric based on two (normalized) normal directions
     T operator() (Point3f& n1, Point3f& n2) const
     {
-    	double e= acos(n1.ddot(n2));
-
-    	return e;
+    	return acos(n1.ddot(n2));
     }
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
     };
 template <class T> struct Waterray
-{ ///computes intersection of ray v2 with plane F
+{ // Computes intersection of ray v2 with plane F
+  // Based on distance a along ray-vector v, return Point3f
     T operator() (float& a, Point3f& v) const
     {
-    	Point3f v2= Point3f(a*v.x,a*v.y,a*v.z);
-
-    	return v2;
-    }
+    	return Point3f(a*v.x,a*v.y,a*v.z);
+ 	    }
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
     };
 template <class T> struct axis
-{ ///computes rotation axis by cross product of û and ^v (order of vectors is important!)
-	        T operator() (Point3f& uu, Point3f& vv) const {
-        	Point3f res =vv.cross(uu);
+{ // Computes rotation axis by cross product of û and ^v (order of vectors is important!)
+	T operator() (Point3f& uu, Point3f& vv) const {
 
-        return res;}
+		return vv.cross(uu);
+
+		}
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
     };
 template <class T> struct Homogenous
-{ ///transforms 2D image point in homogoenous coordinates
-        T operator() (Point2f& q) const {return Point3f(q.x,q.y,1);}
-        typedef T first_argument_type;
-        typedef T second_argument_type;
-        typedef T result_type;
-    };
+{ // Transforms 2D image point in homogeneous coordinates
+	T operator() (Point2f& q) const {
+		return Point3f(q.x,q.y,1);}
+	typedef T first_argument_type;
+	typedef T second_argument_type;
+	typedef T result_type;
+};
 template <class T> struct takeNorm
-{ ///computes norm 3D Float image point  (OpenCV gave troubles)
+{ // Computes norm 3D Float image point  (OpenCV gave troubles)
         T operator() (Point3f& p) const {
         	double l =sqrt( p.x*p.x + p.y*p.y + p.z*p.z );
         	return l;}
@@ -289,10 +389,10 @@ template <class T> struct takeNorm
         typedef T result_type;
     };
 template <class T> struct Rotationmatrix
-{ ///computes rotationmatrix around axis -ax and over theta
-    T operator() (double& theta, Point3f& ax) const {
+{ // Computes rotationmatrix around axis -axis and over angle theta
+    T operator() (double& theta, Point3f& axis) const {
 
-    	Mat_<double> r=Mat(-ax).reshape(1,3);
+    	Mat_<double> r=Mat(-axis).reshape(1,3);
         double naxis =norm(r, NORM_L2);
         r=r/naxis;
         double c = cos(theta);
@@ -311,56 +411,51 @@ template <class T> struct Rotationmatrix
     typedef T result_type;
 };
 template <class T> struct Rotationmin
-{ ///rotates -u with rotationmatrix
+{ // Rotates -u with rotationmatrix
       T operator() (Mat& R, Point3f& u) const {
 
           Mat uu=Mat(-u).reshape(1,3);
           Mat n2=R*uu;
           float nn =norm(n2, NORM_L2);
 
-          Point3f res =Point3f(n2.at<float>(0,0)/nn, n2.at<float>(1,0)/nn, n2.at<float>(2,0)/nn);
-          return res;}
+          return Point3f(n2.at<float>(0,0)/nn, n2.at<float>(1,0)/nn, n2.at<float>(2,0)/nn);
+          }
 
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
         };
 template <class T> struct Rotation
-{///rotates u with rotationmatrix
+{// Rotates u with rotationmatrix
       T operator() (Mat& R, Point3f& u) const {
 
           Mat uu=Mat(u).reshape(1,3);
           Mat n2=R*uu;
           float nn =norm(n2, NORM_L2);
 
-          Point3f res =Point3f(n2.at<float>(0,0)/nn, n2.at<float>(1,0)/nn, n2.at<float>(2,0)/nn);
-          return res;}
+          return Point3f(n2.at<float>(0,0)/nn, n2.at<float>(1,0)/nn, n2.at<float>(2,0)/nn);
+          }
 
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
         };
 template <class T> struct Distance
-{ ///computes distance along v from surface point w towards plane z=0
-	    T operator() (Point3f& w, Point3f& v) const {
-
-          float res =-w.z/v.z;
-          return res;}
+{ // Computes distance along v from surface point p towards plane z=0
+	    T operator() (Point3f& p, Point3f& v) const {
+          return (-p.z/v.z);
+          }
 
         typedef T first_argument_type;
         typedef T second_argument_type;
         typedef T result_type;
         };
 template <class T> struct SubtractNormalized
-{ ///subtract two 3D Float vectors and gives normalized result
+{ // Subtract two 3D Float vectors and gives normalized result
     T operator() (Point3f& v1,Point3f& v2) const {
+        Point3f res= Point3f(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z);
+        return res/norm(res);
 
-        Mat res= (Mat_<float>(3,1)<< v1.x-v2.x, v1.y-v2.y, v1.z-v2.z);
-
-        float n =norm(res, NORM_L2);
-
-        Point3f ress = Point3f(res.at<float>(0,0)/n, res.at<float>(1,0)/n, res.at<float>(2,0)/n);
-        return ress;
     }
 
         typedef T first_argument_type;
@@ -368,10 +463,10 @@ template <class T> struct SubtractNormalized
         typedef T result_type;
         };
 template <class T> struct Subtract
-{  ///subtract two 3D Float vectors
+{  // Subtract two 3D Float vectors, gives unnormalized result
     T operator() (Point3f& v1,Point3f& v2) const {
-        Point3f res = Point3f(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z);
-        return res;
+        return Point3f(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z);
+
     }
 
         typedef T first_argument_type;
@@ -379,11 +474,11 @@ template <class T> struct Subtract
         typedef T result_type;
         };
 template <class T> struct AbsoluteAngle
-{ ///Takes 3D point with 3rd dim angle and gives abs and returns same 3D point with abs value of angle
+{ // Takes 3D point with 3rd dim angle and computes abs of 3rd dim
+  // Returns same 3D point with abs value of angle
     T operator() (Point3f p) const {
-        Point3f res = Point3f(p.x,p.y, abs(p.z));
-        return res;
-    }
+        return Point3f(p.x,p.y, abs(p.z));
+        }
 
         typedef T first_argument_type;
         typedef T second_argument_type;
@@ -394,7 +489,7 @@ inline int nancheck(double x) { return x != x; } //check if nan - double version
 inline int nancheck2(float x) { return x != x; } //check if nan - float version
 
 void calcCorners(Size boardSize, float squareSize, vector<Point3f>& corners, int position)
-{ ///Calculate theoretical location of 3D points of camera pose pattern
+{ // Calculate theoretical location of 3D points of camera pose pattern
     corners.resize(0); //set to empty vector
     if(position==1 || position==4){ //cameras at one side
 
@@ -416,97 +511,99 @@ void calcCorners(Size boardSize, float squareSize, vector<Point3f>& corners, int
     else cout<<"Where is the camera positioned???"<<endl;
 }
 CameraParams Initialize(Settings s, int camera)
-{ //Initialization of camera parameters in a CameraParams-var for input of settings and camera number
-		//Read all settings
-	    Mat cameraMatrix, distCoeffs;
-	    string CalibrationFile,  InputReference, OutputFile;
-	    Mat R, origin, RR, rvec, tvec;
-	    int Position;
-	    Point3f c;
-	    switch(camera){ // Open calibration file and reference image depending on camera
-	    	case 1:
-	    		 CalibrationFile= s.CalibrationFile1;
-	    	     InputReference= s.InputReference1;
-	    	     Position=s.Position1;
-	    	     OutputFile=s.OutputCameraPose1;
-	    	     break;
-	    	case 2:
-				 CalibrationFile= s.CalibrationFile2;
-				 InputReference= s.InputReference2;
-	    	     Position=s.Position2;
-	    	     OutputFile=s.OutputCameraPose2;
-				 break;
-	    	case 3:
-				 CalibrationFile= s.CalibrationFile3;
-				 InputReference= s.InputReference3;
-	    	     Position=s.Position3;
-	    	     OutputFile=s.OutputCameraPose3;
-				 break;
-	    }
+{ // Initialization of camera parameters in a CameraParams-object for input of settings and camera number
 
-	    Size board_sz = s.boardSize;
-	    float squareSize = s.squareSize;
-	    float ResponseThreshold=s.ResponseThreshold;
-	    float MinDistance=s.MinDistance;
+	// Initialization and reading of all settings
+	Mat cameraMatrix, distCoeffs;
+	string CalibrationFile,  InputReference, OutputFile;
+	Mat R, origin, RR, rvec, tvec;
+	int Position;
+	Point3f c;
+	switch(camera){ // Open calibration file and reference image depending on camera
+		case 1:
+			 CalibrationFile= s.CalibrationFile1;
+			 InputReference= s.InputReference1;
+			 Position=s.Position1;
+			 OutputFile=s.OutputCameraPose1;
+			 break;
+		case 2:
+			 CalibrationFile= s.CalibrationFile2;
+			 InputReference= s.InputReference2;
+			 Position=s.Position2;
+			 OutputFile=s.OutputCameraPose2;
+			 break;
+		case 3:
+			 CalibrationFile= s.CalibrationFile3;
+			 InputReference= s.InputReference3;
+			 Position=s.Position3;
+			 OutputFile=s.OutputCameraPose3;
+			 break;
+	}
 
-	    //Read in calibration information:distortion coeffcients and cameramatrix
-	    FileStorage fs2(CalibrationFile,FileStorage::READ);
-	        if (!fs2.isOpened())
-	            {
-	                cout << "Could not open the calibration file: \"" << CalibrationFile << "\"" << endl;
+	Size board_sz = s.boardSize;
+	float squareSize = s.squareSize;
+	float ResponseThreshold=s.ResponseThreshold;
+	float MinDistance=s.MinDistance;
 
-	            }
-	     cout <<"Calibration file loaded: "<<CalibrationFile <<endl;
-	     fs2["distortion_coefficients"] >> distCoeffs;
-	     fs2["camera_matrix"] >> cameraMatrix;
-	     fs2.release();
+	//Read in calibration information:distortion coefficients and cameramatrix
+	FileStorage fs2(CalibrationFile,FileStorage::READ);
+		if (!fs2.isOpened())
+			{
+				cout << "Could not open the calibration file: \"" << CalibrationFile << "\"" << endl;
 
-	   	// Computation extrinsic parameters
-		// Read in reference image for camera position and orientation
+			}
+	 cout <<"Calibration file loaded: "<<CalibrationFile <<endl;
+	 fs2["distortion_coefficients"] >> distCoeffs;
+	 fs2["camera_matrix"] >> cameraMatrix;
+	 fs2.release();
 
-		 if(!s.InputTypeRef){
-				FileStorage fs3(InputReference,FileStorage::READ);
-				 if (!fs3.isOpened())
-								{
-									cout << "Could not open the Reference file: \"" << InputReference << "\"" << endl;
+	// Computation extrinsic parameters
 
-								}
-				 cout <<"Calibration file loaded: "<<InputReference <<endl;
-				 fs3["Rotationmatrix"] >> R;
-				 fs3["TranslationVector"] >> tvec;
-				 fs3.release();
-				 RR = R.inv();  // rotation of inverse
-				 origin = -RR * tvec; // translation of inverse
-				 c=Point3f(origin.at<double>(0,0), origin.at<double>(1,0), origin.at<double>(2,0)); // Camera center
+
+	 if(!s.InputTypeRef){ // Camera pose estimation aleady done, read in external parameters from file
+			FileStorage fs3(InputReference,FileStorage::READ);
+			 if (!fs3.isOpened())
+							{
+								cout << "Could not open the Reference file: \"" << InputReference << "\"" << endl;
+
+							}
+			 cout <<"Calibration file loaded: "<<InputReference <<endl;
+			 fs3["Rotationmatrix"] >> R;
+			 fs3["TranslationVector"] >> tvec;
+			 fs3.release();
+			 RR = R.inv();  // rotation of inverse
+			 origin = -RR * tvec; // translation of inverse
+			 c=Point3f(origin.at<double>(0,0), origin.at<double>(1,0), origin.at<double>(2,0)); // Camera center
+	 }
+	 else{ // Read in reference image for camera position and orientation
+			Mat image=imread(InputReference, IMREAD_GRAYSCALE);
+			if( image.data )
+			cout <<"extra reference image loaded:"<<InputReference <<endl;
+			else exit(1);
+
+			//Detect corner points in image but don't undistort them
+			vector<Point2f> sortedcorners =create_points(image, ResponseThreshold, MinDistance,s.responseRadius, board_sz, cameraMatrix, distCoeffs, s.showCorners);
+
+			// Compute theoretical 3D world coordinates
+			vector<Point3f> objectPoints(sortedcorners.size());
+			calcCorners(board_sz, squareSize, objectPoints, Position);
+
+			// Perform camera pose estimation
+			bool succes= solvePnP(objectPoints,  sortedcorners,  cameraMatrix, distCoeffs,  rvec, tvec, false); //camera pose estimation
+				   if (!succes){
+
+					   cout<< "Initialization not succeeded" << endl;
+					   exit(1);}
+
+		   Rodrigues(rvec, R); // Computation of rotationmatrix from rotationvector with Rodrigues formula
+		   RR = R.inv();  // rotation of inverse
+		   origin = -RR * tvec; // translation of inverse
+		   c=Point3f(origin.at<double>(0,0), origin.at<double>(1,0), origin.at<double>(2,0)); // Camera center
+
 		 }
-		 else{
-				Mat image=imread(InputReference, IMREAD_GRAYSCALE);
-		        if( image.data )
-		        cout <<"extra reference image loaded:"<<InputReference <<endl;
-		        else exit(1);
 
-		        //Detect corner points in image but don't undistort them
-		        vector<Point2f> sortedcorners =create_points(image, ResponseThreshold, MinDistance,s.responseRadius, board_sz, cameraMatrix, distCoeffs, s.showCorners);
-
-		        Mat r;
-				Mat undistortedimage;
-				undistort(image, undistortedimage, cameraMatrix, distCoeffs);//undistort image
-
-		        vector<Point3f> objectPoints(sortedcorners.size());
-		        calcCorners(board_sz, squareSize, objectPoints, Position);//theoretical 3D world coordinates
-		        bool succes= solvePnP(objectPoints,  sortedcorners,  cameraMatrix, distCoeffs,  rvec, tvec, false); //camera pose estimation
-		               if (!succes){
-
-		                   cout<< "Initialization not succeeded" << endl;
-		                   exit(1);}
-			   Rodrigues(rvec, R);
-			   RR = R.inv();  // rotation of inverse
-			   origin = -RR * tvec; // translation of inverse
-			   c=Point3f(origin.at<double>(0,0), origin.at<double>(1,0), origin.at<double>(2,0)); // Camera center
-
-		 }
+	 	// Read in fixed locations of feature points f on feature plane F
 		ifstream input(s.InputInitial);
-
 		while(input.fail())
 		{
 			cout<< "File for initial location of f incorrect" << endl;
@@ -518,7 +615,7 @@ CameraParams Initialize(Settings s, int camera)
 		{
 			f.push_back(tmp);
 		};
-		if(s.saveCameraPose){
+		if(s.saveCameraPose){ // Save result camera pose estimation if needed
 
 		saveCameraParams(OutputFile, R, tvec);
 
@@ -529,7 +626,7 @@ CameraParams Initialize(Settings s, int camera)
 
 //Find intersection of rays with with surfaces
 void findIntersection( int n, double x[], double fvec[], int *iflag, double params[] )
-{///Find intersection of ray cq' with surface charct by 5 coeffs
+{ // Find intersection of ray cq' with surface model characterized by 5 coefficients
     double cx = params[0];
     double cy = params[1];
     double cz = params[2];
@@ -552,7 +649,7 @@ void findIntersection( int n, double x[], double fvec[], int *iflag, double para
     return;
 }
 void findIntersection_2ndorder( int n, double x[], double fvec[], int *iflag, double params[] )
-{///Find intersection of ray cq' with surface charct by 8 coeffs
+{ // Find intersection of ray cq' with surface model characterized by 8 coefficients
     double cx = params[0];
     double cy = params[1];
     double cz = params[2];
@@ -576,92 +673,120 @@ void findIntersection_2ndorder( int n, double x[], double fvec[], int *iflag, do
     fvec[3] = -x[3] + A00 + A10 * cos(PI*x[1]/Lx)+A01*cos(PI*x[2]/Ly)+B*x[1]/Lx+C*x[2]/Ly + A20 * cos(2*PI*x[1]/Lx)+ A02 * cos(2*PI*x[2]/Ly) + A11 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly);
     return;
 }
+void findIntersection_3rdorder( int n, double x[], double fvec[], int *iflag, double params[] )
+{ // Find intersection of ray cq' with surface model characterized by 8 coefficients
+    double cx = params[0];
+    double cy = params[1];
+    double cz = params[2];
+    double rx = params[3];
+    double ry = params[4];
+    double rz = params[5];
+    double Lx = params[6];
+    double Ly = params[7];
+    double A00 = params[8];
+    double A10 = params[9];
+    double A01 = params[10];
+    double B = params[11];
+    double C = params[12];
+	double A20 = params[13];
+	double A02 = params[14];
+	double A11 = params[15];
+	double A30 = params[16];
+	double A03 = params[17];
+	double A21 = params[18];
+	double A12 = params[19];
 
+    fvec[0] = cx+ x[0] * rx -x[1];
+    fvec[1] = cy + x[0] * ry -x[2];
+    fvec[2] = cz + x[0] * rz -x[3];
+    fvec[3] = -x[3] + A00 + A10 * cos(PI*x[1]/Lx)+A01*cos(PI*x[2]/Ly)+B*x[1]/Lx+C*x[2]/Ly + A20 * cos(2*PI*x[1]/Lx)+ A02 * cos(2*PI*x[2]/Ly) + A11 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly)+ A30 * cos(3*PI*x[1]/Lx)+ A03 * cos(3*PI*x[2]/Ly) + A21 * cos(PI*x[1]/Lx*2) * cos(PI*x[2]/Ly)+ A12 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly*2);
+    return;
+}
 //Optimization of coefficients
 vector<double> compute_error(float Lx, float Ly, int ErrorMetric, CameraParams Camera, vector<Point3f> Pixels, vector<Point3f> f, real_1d_array Coeff)
-{ /// Compute errors Ef for all feature points of one camera
+{ // Compute errors Ef for all feature points of one camera
 
 
 	//Initialize all temp vectors
 	vector<Point3f> qworld(Pixels.size());
-	vector<Point3f> q(Pixels.size());
-	vector<Point3f> qImagePlane(Pixels.size());
-    vector<Point3f> rays(Pixels.size());
     vector<Point3f> water(Pixels.size());
-    vector<Point3f> normals(Pixels.size());
+    vector<Point3f> normals1(Pixels.size());
     vector<Point3f> u(Pixels.size());
-    vector<Point3f> u2(Pixels.size());
     vector<Point3f> v(Pixels.size());
     vector<Point3f> v2(Pixels.size());
     vector<Point3f> X(Pixels.size());
     vector<Point3f> X2(Pixels.size());
-    vector<Point3f> X3(Pixels.size());
     vector<Point3f> normals2(Pixels.size());
 
     vector<double> thetad(Pixels.size());
     vector<double> E(Pixels.size());
     vector<double> thetai(Pixels.size());
     vector<double> thetai2(Pixels.size());
-    vector<double> thetai3(Pixels.size());
     vector<double> thetad2(Pixels.size());
     vector<double> thetar(Pixels.size());
     vector<float> a(Pixels.size());
 
     vector<Mat> Rotations(Pixels.size());
     vector<Mat> Rotations2(Pixels.size());
-    vector<Mat> Rotations3(Pixels.size());
     vector<Point3f> features2(Pixels.size());
     vector<Point3f> uu(Pixels.size());
     vector<Point3f> vv(Pixels.size());
     vector<Point3f> shift(Pixels.size());
-    vector<Point3f> shiftImage(Pixels.size());
 
-
+    // Compute inverse of camera matrices
     Mat RR=Camera.R.inv();
     Mat KK=Camera.K.inv();
 
-    transform(Pixels.begin(), Pixels.end(), qworld.begin(), worldCoords<Point3f> (RR, Camera.T, KK)); //compute world coordinates q'
-    transform(qworld.begin(), qworld.end(), rays.begin(), Ray<Point3f> (Camera.c)); //compute rays u=cq'
-
-	//Determine surface points according to surface model and hypothesized Coefff
-     transform(rays.begin(), rays.end(), water.begin(),  waterSurface_2ndorder<Point3f> (Camera.c, Lx, Ly, Coeff));
-
-	//Compute normals n2 according to surface model and hypothesized Coefff
-    transform(water.begin(), water.end(), normals.begin(), Normals_2ndorder<Point3f> (Coeff, Lx,Ly));
-
-    transform (water.begin(), water.end(), qworld.begin(), u.begin(), SubtractNormalized<Point3f>()); // u in alternative way-->gives the same, I checked
-
-    transform (f.begin(), f.end(), water.begin(), v.begin(), SubtractNormalized<Point3f>()); //compute rays v=pf
-
-    transform (u.begin(), u.end(), v.begin(), thetad.begin(),prod<double>()); //compute thetad
-
-    transform (u.begin(), u.end(), v.begin(), X.begin(),axis<Point3f> ()); //compute rotation axis
-
-    transform(thetad.begin(), thetad.end(), thetai.begin(), Angle<double>(rw)); //compute thetai
-
-    transform (thetai.begin(), thetai.end(), X.begin(), Rotations.begin(), Rotationmatrix<Mat>()); //detemine rotationmatrix
-
-    transform (Rotations.begin(), Rotations.end(), u.begin(), normals2.begin(), Rotationmin<Point3f>()); //rotate u with rotationmatrix
-    if(ErrorMetric==1) //compute normal colinearity metrix
-    transform (normals.begin(), normals.end(),normals2.begin(), E.begin(), error_col<double>());
-    else if(ErrorMetric==2){ //compute disparity difference metric
-    transform (u.begin(), u.end(), normals.begin(), thetai2.begin(),prod2<double>());
+    // Compute world coordinates q'
+    transform(Pixels.begin(), Pixels.end(), qworld.begin(), worldCoords<Point3f> (RR, Camera.T, KK));
+    // Compute rays u=cq'
+    transform(qworld.begin(), qworld.end(), u.begin(), Ray<Point3f> (Camera.c));
+	// Determine surface points according to surface model and hypothesized coefficients
+     transform(u.begin(), u.end(), water.begin(),  waterSurface_2ndorder<Point3f> (Camera.c, Lx, Ly, Coeff));
+	// Compute normals n2 according to surface model and hypothesized coefficients
+    transform(water.begin(), water.end(), normals2.begin(), Normals_2ndorder<Point3f> (Coeff, Lx,Ly));
+    // Compute rays v=pf
+    transform (f.begin(), f.end(), water.begin(), v.begin(), SubtractNormalized<Point3f>());
+    // Compute thetad
+    transform (u.begin(), u.end(), v.begin(), thetad.begin(),prod<double>());
+    // Compute rotation axis
+    transform (u.begin(), u.end(), v.begin(), X.begin(),axis<Point3f> ());
+    // Compute thetai
+    transform(thetad.begin(), thetad.end(), thetai.begin(), Angle<double>(rw));
+    // Compute rotation matrix
+    transform (thetai.begin(), thetai.end(), X.begin(), Rotations.begin(), Rotationmatrix<Mat>());
+    // Rotate u with rotationmatrix
+    transform (Rotations.begin(), Rotations.end(), u.begin(), normals1.begin(), Rotationmin<Point3f>());
+    if(ErrorMetric==1) // Compute normal collinearity metric
+    transform (normals2.begin(), normals2.end(),normals1.begin(), E.begin(), error_col<double>());
+    else if(ErrorMetric==2){ // Compute disparity difference metric
+    // Compute angle between normals n2 and rays u
+    transform (u.begin(), u.end(), normals2.begin(), thetai2.begin(),prod2<double>());
+    // Compute second angle theta_delta2
     transform(thetai2.begin(), thetai2.end(), thetad2.begin(), Angle2<double>(rw));
-    transform (normals2.begin(), normals2.end(), u.begin(), X2.begin(),axis<Point3f> ());
+    // Compute rotation axis
+    transform (normals2.begin(), normals2.end(), u.begin(), X2.begin(), axis<Point3f> ());
+    // Compute rotation matrix
     transform (thetad2.begin(), thetad2.end(), X2.begin(), Rotations2.begin(), Rotationmatrix<Mat>());
-    transform (Rotations2.begin(), Rotations2.end(), u.begin(), v2.begin(), Rotationmin<Point3f>());
+    // Rotate vector u to get v2
+    transform (Rotations2.begin(), Rotations2.end(), u.begin(), v2.begin(), Rotation<Point3f>());
+    // Calculate distance along v2 from surface point to z=0
     transform (water.begin(), water.end(), v2.begin(), a.begin(), Distance<float>());
+    // Compute vector from p, along v with length a
     transform (a.begin(), a.end(), v2.begin(), vv.begin(), Waterray<Point3f>());
+    // Compute intersections with plane z=0
     transform (water.begin(), water.end(), vv.begin(), features2.begin(), std::plus<Point3f>());
+    // Compute disparity shift
     transform (f.begin(), f.end(), features2.begin(), shift.begin(), Subtract<Point3f>());
-    transform (shift.begin(), shift.end(),E.begin(), takeNorm<double>());}
-
+    // Compute norm of disparity shift
+    transform (shift.begin(), shift.end(),E.begin(), takeNorm<double>());
+   }
      return E;
 }
 void combined_error3(const real_1d_array &x, real_1d_array &fi, void *ptr)
-{ /// Compute errors of all cameras combined for set of 3 cameras
+{ // Compute errors of all cameras combined for set of 3 cameras
 
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr));
+	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
 
 	//Errors Ef first camera
 	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
@@ -685,7 +810,7 @@ void combined_error3(const real_1d_array &x, real_1d_array &fi, void *ptr)
 void combined_error2(const real_1d_array &x, real_1d_array &fi, void *ptr)
 { /// Compute errors of all cameras combined for set of 2 cameras
 
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr));
+	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
 
 	//Errors Ef first camera
 	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
@@ -704,25 +829,24 @@ void combined_error2(const real_1d_array &x, real_1d_array &fi, void *ptr)
 void combined_error1(const real_1d_array &x, real_1d_array &fi, void *ptr)
 { /// Compute errors of single camera 
 
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr));
+	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
 	//Errors Ef first camera
 	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
-
 
 	for(size_t k=0; k<E1.size(); k++)
 		fi[k] = (nancheck(E1[k]) ? 0.0 : E1[k]) ; //if nan then no contribution to error-> not included in optimization
  }
 real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
-{ /// Finds optimal coefficicients for frame
-  /// Requires initial guess and frameOptimizer containing all necessary input
+{ // Finds optimal coefficients for frame
+  // Requires initial guess and frameOptimizer containing all necessary input
 
-		//Optimization configuration
+		// Optimization configuration parameters
 		minlmstate state;
 	    minlmreport rep;
 	    void *ptr;
 	    ptr=&Frame;
-		//assign parameters for optimization
 
+		// Initialize optimization
 		minlmcreatev(Frame.CameraAmount*Frame.Pixels[0].size(), Coeff, Frame.diffStep, state);
 		minlmsetcond(state, Frame.epsg, Frame.epsf, Frame.epsx, Frame.maxits);
 
@@ -743,8 +867,8 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 			default:
 				cout<<"Error: Impossible amount of camera's"<<endl;}
 		}
-		else if(Frame.Params==3){ //only A00, B, C
-			real_1d_array bndl = "[-0.05,0.0,0.0,-20.0,-20.0,0,0,0]"; //lower boudnary
+		else if(Frame.Params==3){ // only constant and linear terms A00, B, C
+			real_1d_array bndl = "[-0.05,0.0,0.0,-20.0,-20.0,0,0,0]"; //lower boundary
 			real_1d_array bndu = "[150.05,0,0,20.0,20.0,0,0,0]"; //upper boundary
 			alglib::minlmsetbc(state,  bndl, bndu);
 
@@ -761,7 +885,7 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 			default:
 				cout<<"Error: Impossible amount of camera's"<<endl;}
 		}
-		else{ //all 8 coefss
+		else{ // use 8 coefficients (to second order)
 			switch(Frame.CameraAmount){ //Determine camera-amount and use appropriate function to compute errors
 			case 1:
 				alglib::minlmoptimize(state, combined_error1, NULL, ptr); //optimize
@@ -781,10 +905,11 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 
 	}
 
-//Temporal reconstruction functions
+/// Main function
 int main ( )
-{ /// Main function to reconstruct time-dependent water surface.
+{ // Main function to reconstruct time-dependent water surface.
 
+	// Set chrono-time at begin
 	std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
 
 	//Read all settings
@@ -810,7 +935,7 @@ int main ( )
 	omp_set_num_threads(s.ThreadAmount);
 	vector<vector<vector<Corner> > > prevPixels(s.ThreadAmount);
 
-	switch(s.CameraAmount){ // Choice of cameras and initialize each camera seperately
+	switch(s.CameraAmount){ // Choice of cameras and initialize each camera separately
 
 	case 1:
 		cam1=Initialize(s, 1);
@@ -829,11 +954,11 @@ int main ( )
 		return 0;
 	}
 
-	vector<vector<real_1d_array> >CoefficientsList(s.ThreadAmount); //Output list of coeffcients
-	vector<vector <double>> ErrorList(s.ThreadAmount); //Output list of corresponding errors
+	vector<vector<real_1d_array> >CoefficientsList(s.ThreadAmount); // Output list of coefficients
+	vector<vector <double>> ErrorList(s.ThreadAmount); // Output list of corresponding errors
 
 	real_1d_array InitialCoeffs;
-	if(s.setInitialGuess){ //Change initial guess of coefficients-> influences convergence rate
+	if(s.setInitialGuess){ // Change initial guess of coefficients-> influences convergence rate
 		double i[8];
 
 		cout << "Please enter a value for A00: ";
@@ -856,13 +981,14 @@ int main ( )
 
 	}
 	else{
-	InitialCoeffs= "[5.05000,0.000,0.000,0.000,0.000,0.000,0.000,0.000]";
+	InitialCoeffs= "[4.55000,0.000,0.000,0.000,0.000,0.000,0.000,0.000]";
 	}
 
 	vector<frameOptimizer> optimizers(s.ThreadAmount);
+
 	for(size_t i=0;i<s.ThreadAmount;i++){
 	vector<CameraParams> cams;
-	switch(s.CameraAmount){ //Choice of cameras and intialize optimalisation with appropriate camera amount
+	switch(s.CameraAmount){ //Choice of cameras and initialize optimalization with appropriate camera amount
 
 	case 1:
 		cams.push_back(cam1);
@@ -928,34 +1054,34 @@ int main ( )
 	bool check2=false;
 	bool check3=false;
 
-	switch(s.CameraAmount){ // Choice of cameras and read imagenames in every directory (for each camera)
+	switch(s.CameraAmount){ // Choice of cameras and read image-names in every directory (for each camera)
 
 	case 1:
 		InputDirectory1=s.InputDirectory1;
-		check1=readStringList(imageList1, InputDirectory1); //read all imagenames
+		check1=readStringList(imageList1, InputDirectory1); //read all image-names
 		check=check1;
 		break;
 	case 2:
 		InputDirectory1=s.InputDirectory1;
 		InputDirectory2=s.InputDirectory2;
-		check1=readStringList(imageList1, InputDirectory1); //read all imagenames
-		check2=readStringList(imageList2, InputDirectory2); //read all imagenames
+		check1=readStringList(imageList1, InputDirectory1); //read all image-names
+		check2=readStringList(imageList2, InputDirectory2); //read all imagen-ames
 		check=check1 && check2;
 		break;
 	case 3:
 		InputDirectory1=s.InputDirectory1;
 		InputDirectory2=s.InputDirectory2;
 		InputDirectory3=s.InputDirectory3;
-		check1=readStringList(imageList1, InputDirectory1); //read all imagenames
-		check2=readStringList(imageList2, InputDirectory2); //read all imagenames
-		check3=readStringList(imageList3, InputDirectory3); //read all imagenames
+		check1=readStringList(imageList1, InputDirectory1); //read all image-names
+		check2=readStringList(imageList2, InputDirectory2); //read all image-names
+		check3=readStringList(imageList3, InputDirectory3); //read all image-names
 		check=check1 && check2 && check3;
 		break;
 	}
 
 	// Check if image-names are successfully loaded
 	if(check){
-		cout<<"imageNames/filenames loaded"<<endl;
+		cout<<"image-names/filenames loaded"<<endl;
 		nimages=imageList1.size(); //number of images
 	}
 	else{
@@ -1019,7 +1145,7 @@ int main ( )
 			}
 			prevPixels[tid]=pixels;
 			vector<double> E1, E2, E3, E4, E5, E6; // Errors corresponding to the previous coefficient-sets
-			optimizers[tid].changePixels(pixels); // Change frameOptimizer to cornerlist which requires optimization for this frame
+			optimizers[tid].changePixels(pixels); // Change frameOptimizer to corner-list which requires optimization for this frame
 			
 			// Starting from 6th image: find best initial guess out of 5 previous time step and first initial guess (flat surface)
 			if(i-j*images_thread>4){

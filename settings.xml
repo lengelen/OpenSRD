@@ -31,7 +31,7 @@
   <!-- Amount of parameters used-->
   <SurfaceModel>8</SurfaceModel>
     <!-- Amount of threads used-->
-  <ThreadAmount>6</ThreadAmount>
+  <ThreadAmount>1</ThreadAmount>
 
   <!-- change Initial guess (final water level)-->
   <setInitialGuess>0</setInitialGuess>
@@ -49,12 +49,12 @@
   <!-- Type of reference input: image->true:1, file->false:0-->
   <InputTypeRef>1</InputTypeRef>
   <!-- Type of input: images->true:1, file->false:0-->
-  <InputType>0</InputType>
+  <InputType>1</InputType>
   <!-- Fixed location of points f-->
   <InputInitial>"/home/lengelen/Documents/PRE_PROCESS/FeaturesF.txt"</InputInitial>
   
   <!-- The name of the input directory of camera 1-->
-  <InputDirectory1>"/home/lengelen/Documents/RESULTS/FEATURES/CAM1"</InputDirectory1>
+  <InputDirectory1>"/home/lengelen/Documents/DATA"</InputDirectory1>
   <!-- The name of the input directory of camera 2-->
   <InputDirectory2>"/home/lengelen/Desktop/MS_20160524/m5/86/GRAY"</InputDirectory2>
   <!-- The name of the input directory of camera 3-->

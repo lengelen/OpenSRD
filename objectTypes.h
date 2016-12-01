@@ -8,7 +8,7 @@
 #ifndef OBJECTTYPES_H_
 #define OBJECTTYPES_H_
 
-/// Inlcude header files and external source files
+/// Include header files and external source files
 
 #include <omp.h>
 #include <chrono>
@@ -74,8 +74,6 @@ template <class Type> class waterSurface;
 template <class Type> class waterSurface_2ndorder;
 template <class Type> class imagePoints;
 template <class Type> class imagePoints2;
-template <class T> struct reduce_Resp;
-template <class Type> class getResponse;
 struct arrange1;
 struct arrange2;
 struct arrange3;
@@ -93,7 +91,6 @@ template <class T> struct Rotation;
 template <class T> struct Distance;
 template <class T> struct SubtractNormalized;
 template <class T> struct Subtract;
-template <class T> struct reduce_dist;
 template <class Type> class angleImage1;
 template <class Type> class angleImage2;
 template <class T> struct reduce_Z;
@@ -104,34 +101,24 @@ template <class Type> class findMatches;
 /// Object classes
 
 class Corner{
+
 private:
 	int iD;
-	Point3f coords;
-	Point3f prevCoords;
-	Point2f vel;
-	bool Found;
-public:
-	Corner(){};
+	Point3f coords; // Homog coordinates (u,v,1)
+	Point2f vel; // Velocity of feature point in image plane between frames
+	bool Found; // Boolean to indicate corner found or not
 
+public:
+	// Constructors
+	Corner(){};
 	Corner(Point3f iCoords, int i_iD){
-		prevCoords=iCoords;
 		coords=iCoords;
 		iD=i_iD;
 		Found=true;
 	};
+	// Get private object variables
 	int getiD(){
 		return iD;
-	}
-	void setCoords(Point3f iCoords){
-		prevCoords=coords;
-		coords=iCoords;
-		vel=Point2f(coords.x-prevCoords.x, coords.y-prevCoords.y);
-	};
-	void setFound(bool newValue){
-		Found=newValue;
-	}
-	Point3f predictPoint(){
-		return Point3f(coords.x+vel.x,coords.y+vel.y,1);
 	}
 	Point3f getCoords(){
 		return coords;
@@ -139,9 +126,23 @@ public:
 	bool getFound(){
 		return Found;
 	}
+	// Print coordinates to string
 	string printCoordinates(){
 		return to_string(coords.x)+"\t"+to_string(coords.y);
 	}
+	// Change object variables
+	void setCoords(Point3f iCoords){
+		coords=iCoords;
+		vel=Point2f(iCoords.x-coords.x, iCoords.y-coords.y);
+	};
+	void setFound(bool newValue){
+		Found=newValue;
+	}
+	// Predict location in next image
+	Point3f predictPoint(){
+		return Point3f(coords.x+vel.x,coords.y+vel.y,1);
+	}
+
 };
 class CameraParams
 { /// Stores all info about camera (extrinsic, intrinsic and initial image points q)
@@ -168,22 +169,27 @@ public:
     }
 
 };
+
 class frameOptimizer
-{ ///Class to store optimization settings, including cameras (with parameters) and vectorlist of point coordinates q'
+{ ///Class to store optimization settings, including cameras (with parameters) and vector-list of point coordinates q'
 public:
 
-	// Initialization of optimization parameters
+	// Camera set-up and surface model parameters
 	size_t CameraAmount;
 	vector<CameraParams> Cameras;
 	int ErrorMetric;
 	int Params;
+	float Lx;
+	float Ly;
+
+	// Optimization parameters
 	double epsg = 0.0000000001;
 	double epsf = 0;
 	double epsx = 0;
 	ae_int_t maxits = 0;
 	double diffStep= 0.0001;
-	float Lx;
-	float Ly;
+
+	// Input per image
 	vector<vector<Point3f> > Pixels;
 	vector<vector<Point3f> > fs;
 
@@ -197,7 +203,6 @@ public:
 		Lx=0;
 		Ly=0;
 	}
-
 	frameOptimizer (int i_CameraAmount, vector<CameraParams> i_Cameras, int i_ErrorMetric, int i_Params, float i_Lx, float i_Ly) {
 
 		CameraAmount=i_CameraAmount;
@@ -208,7 +213,7 @@ public:
 		Ly=i_Ly;
     }
 
-	// Change Stoppingconditions optimisation
+	// Change Stoppingconditions optimization
 	void setStoppingConditions(double i_epsg , double i_epsf, double i_epsx, ae_int_t i_maxits)
 	{
 		epsg = i_epsg;
@@ -216,16 +221,19 @@ public:
 		epsx = i_epsx;
 		maxits = i_maxits;
 	}
-	// Change differention-step
+	// Change differentation-step
 	void setDiffStep(double i_diffStep )
 	{
 		diffStep=i_diffStep;
 	}
-	// Change set of image points for which optimisation is runned
+	// Change set of image points for which optimization is run
 	void changePixels(vector<vector<Corner> > i_Corners)
 	{
+		// Reset vector of features f and pixel coordinates
 		fs=vector<vector<Point3f> >(CameraAmount);
 		Pixels=vector<vector<Point3f> >(CameraAmount);
+
+		// Fill in updated values
 		for(size_t i =0; i<CameraAmount; i++){
 			for(size_t j=0; j<i_Corners[i].size(); j++){
 				if(i_Corners[i][j].getFound()){
@@ -242,6 +250,7 @@ class Settings
 { /// Settings class for reconstruction
 public:
 
+	// Change length scale for global optimization
 	void changeLengthscales(float i_Lx, float i_Ly){
 		Lx=i_Lx;
 		Ly=i_Ly;

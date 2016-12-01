@@ -41,7 +41,7 @@ bool readStringList(vector<string>& l, string dir )
 
 // Write functions
 void writeMatToFile(cv::Mat& m, const char* filename, string  outputDirectory)
-{ ///write a Float-matrix to outputdirectory, using filename
+{ ///write a Float-matrix to output-directory, using filename
     std::ofstream fout(outputDirectory+filename);
 
     if(!fout)
@@ -86,10 +86,11 @@ void writeArray(vector<vector<real_1d_array> >planes, string  out)
 
 	//Concatenate vector of vectors
 	for( size_t t=0; t<planes.size();t++){
+		fout<<t<<endl;
 		for(size_t i=0; i<planes[t].size(); i++)
 			{
     		fout <<planes[t][i].tostring(5).c_str()<<endl;
-			}
+    		}
 	}
 
     fout.close();

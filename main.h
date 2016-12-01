@@ -5,8 +5,9 @@
 #include "ReadAndWrite.h"
 
 //Find intersection of rays with with surfaces
-void findIntersection( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface charct by 5 coeffs
-void findIntersection_2ndorder( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface charct by 8 coeffs
+void findIntersection( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 5 coefficients
+void findIntersection_2ndorder( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 8 coefficients
+void findIntersection_3rdorder( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 12 coefficients
 
 inline int nancheck(double x); //check if nan - double version
 inline int nancheck2(float x); //check if nan - float version
