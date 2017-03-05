@@ -1338,7 +1338,10 @@ int main ( )
 
 	//Read all settings
 	Settings s;
-	FileStorage fs("settings.xml", FileStorage::READ); // Read the settings
+	string inputSettingsFile;
+	cout << "Give InputsettingsFile: " << flush; //Read which settingsfile has to be used
+	getline( cin, inputSettingsFile );  // gets everything the user ENTERs
+	FileStorage fs(inputSettingsFile, FileStorage::READ); // Read the settings
 	if (!fs.isOpened())
 		{
 			cout << "Could not open the configuration file: "<< endl;
