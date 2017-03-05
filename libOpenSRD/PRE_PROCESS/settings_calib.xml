@@ -1,34 +1,30 @@
 <?xml version="1.0"?>
 <opencv_storage>
 <Settings>
+   <!-- Whether to adapt calibration images -->
+  <AdaptImage>0</AdaptImage>  
+  
   <!-- Number of INNER corners per a item row and column. (square, circle) -->
   <BoardSize_Width> 9</BoardSize_Width>
   <BoardSize_Height>14</BoardSize_Height>
   
-  <!-- The size of a square in some user defined metric system (pixel, millimeter)-->
-  <Square_Size>14.85</Square_Size>
-  
-  <!-- The number of frames used to perform calibration <= amunt of images in InputDirectory-->
-  <nframes>35</nframes>
+  <!-- The name of the input directory of Calibration Images-->
+  <InputDirectory>"CALIB"</InputDirectory>
   
   <!-- Whether to show calibration images -->
-  <Showcalib>1</Showcalib>
-
-  <!-- Whether to adapt calibration images -->
-  <adaptImage>0</adaptImage>  
-   
-  <!-- The name of the output file. -->
-  <Write_outputFileName>"PRE_PROCESS/Calibration_results.yml"</Write_outputFileName>
-  
-  <!-- If true (non-zero) we write to the output file the reprojection errors per view-->
-  <writePerview>0</writePerview>
+  <ShowCalibration>1</ShowCalibration>
   
   <!-- If true (non-zero) we show after calibration the undistorted images.-->
   <Show_UndistortedImage>1</Show_UndistortedImage>
   
-  <!-- The name of the input directory of Calibration Images-->
-  <InputDirectory>"CALIB"</InputDirectory>
- 
+  <!-- The size of a square in some user defined metric system (pixel, millimeter)-->
+  <Square_Size>14.85</Square_Size>
+  
+  <!-- The name of the output file. -->
+  <Write_OutputFileName>"PRE_PROCESS/Calibration_results.yml"</Write_OutputFileName>
+  
+  <!-- If true (non-zero) we write to the output file the reprojection errors per view-->
+  <WritePerView>0</WritePerView>
 
 </Settings>
 </opencv_storage>
