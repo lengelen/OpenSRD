@@ -33,21 +33,9 @@ using namespace std;
 RNG rng(12345);
 clock_t prevTimestamp = 0;
 
-
-
-/*static void help()
-{
-    cout <<  "This is a camera calibration sample." << endl
-    <<  "Usage: calibration configurationFile"  << endl
-    <<  "Near the sample file you'll find the configuration file, which has detailed help of "
-    "how to edit it.  It may be any OpenCV supported file format XML/YAML." << endl;
-}
-*/
-
 class Settings
 {/// Class to load the predefined settings from settingsfile
 public:
-
      
     void write(FileStorage& fs) const                        //Write serialization for this class
     {
@@ -55,12 +43,12 @@ public:
         << "BoardSize_Width"  << boardSize.width
         << "BoardSize_Height" << boardSize.height
         << "Square_Size"	<< squareSize
-        << "adaptImage"	<< adaptImage
-        << "writePerview"   << writePerview
-        << "Write_outputFileName"  << outputFileName
+        << "AdaptImage"	<< AdaptImage
+        << "WritePerView"   << WritePerView
+        << "Write_OutputFileName"  << OutputFileName
         << "InputDirectory"  << InputDirectory
         << "Show_UndistortedImage"	<< showUndistorted
-		<< "Showcalib"	<< Showcalib
+	<< "Showcalib"	<< Showcalib
         << "}";
     }
     void read(const FileNode& node)                          //Read serialization for this class
@@ -68,13 +56,12 @@ public:
         node["BoardSize_Width" ] >> boardSize.width;
         node["BoardSize_Height"] >> boardSize.height;
         node["Square_Size"]  >> squareSize;
-        node["nframes"] >> nframes;
-        node["Write_outputFileName"] >> outputFileName;
+        node["Write_OutputFileName"] >> outputFileName;
         node["Show_UndistortedImage"] >> showUndistorted;
         node["InputDirectory"]  >> InputDirectory;
-        node["Showcalib"] >> Showcalib;
-        node["writePerview"] >> writePerview;
-        node["adaptImage"] >> adaptImage;
+        node["ShowCalibration"] >> ShowCalibration;
+        node["WritePerView"] >> WritePerView;
+        node["AdaptImage"] >> AdaptImage;
     }
       
     static bool readStringList(vector<string>& l )
@@ -116,10 +103,8 @@ public:
     string outputFileName;       // The name of the file where to write
     string InputDirectory;       // The name of the directory of calibration images 
     bool showUndistorted;        // Show undistorted images after calibration
-    int nframes;				 // Number of frames used for calibration
-    bool Showcalib;				 // Show calib results or not
-    bool adaptImage;			 // Adapt calibration images before calibration procedure
-    
+    bool ShowCalibration;	 // Show calib results or not
+    bool AdaptImage;		 // Adapt calibration images before calibration procedure
     vector<string> imageList;
     size_t atImageList;
 };
@@ -226,17 +211,14 @@ static void saveCameraParams( const string& filename,
     fs << "board_width" << boardSize.width;
     fs << "board_height" << boardSize.height;
     fs << "squareSize" << squareSize;
-    fs << "nframes - max" << nframes;
-    fs << "nframes - camera" <<  (int)reprojErrs.size();
-      
+    fs << "Number of frames" <<  (int)reprojErrs.size();
     fs << "camera_matrix" << cameraMatrix;
     fs << "distortion_coefficients" << distCoeffs;
   
-    
-    fs << "avg_reprojection_error - camera 1" << totalAvgErr;
+    fs << "avg_reprojection_error" << totalAvgErr;
     if( !reprojErrs.empty())
     {
-    fs << "per_view_reprojection_errors -camera 1" << Mat(reprojErrs);
+    fs << "per_view_reprojection_errors" << Mat(reprojErrs);
     }
     fs.release();        
 	}
@@ -391,10 +373,9 @@ int main()
 	
 	//Read the settings of the calibration
 	Settings s;
-    string inputSettings;
+    string inputSettingsFile;
     cout << "Give InputsettingsFile: " << flush; //Read which settingsfile has to be used
-    getline( cin, inputSettings );  // gets everything the user ENTERs
-    string inputSettingsFile="PRE_PROCESS/"+inputSettings;
+    getline( cin, inputSettingsFile );  // gets everything the user ENTERs
     FileStorage fs(inputSettingsFile, FileStorage::READ); // Read the settings
     if (!fs.isOpened())
         {
@@ -409,7 +390,6 @@ int main()
     Size imageSize;
     float squareSize = s.squareSize;
     Mat cameraMatrix, distCoeffs;
-    int nframes=s.nframes;  
     string InputDirectory=s.InputDirectory;
     bool showUndistorted=s.showUndistorted;
 	bool Showcalib=s.Showcalib;
@@ -428,7 +408,7 @@ int main()
     nimages = (int)imageList.size(); //amount of calibration images
     if( !check) return 0; 
     
-    for(int i = 0;i<nimages && i<nframes;i=i+1) //Iterate over all images
+    for(int i = 0;i<nimages;i=i+1) //Iterate over all images
         {   
 			Mat view =imread(imageList[i], 1);  //Read in image   
 			
@@ -444,7 +424,7 @@ int main()
 			 	imshow("Image", view);
 				waitKey(0);
 				destroyWindow("Image");
-				cout << "Give alpha for new image (double so use point e.g. 1.5): " << flush;
+				cout << "Give alpha for new image (double so use decimal point, e.g. 1.5): " << flush;
 				cin >> alpha;
 				cout << "Give beta for new image (integer): " << flush;
 				cin >> beta;
