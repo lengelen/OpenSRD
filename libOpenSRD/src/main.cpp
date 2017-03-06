@@ -750,43 +750,43 @@ template <class T> struct AbsoluteAngle
 inline int nancheck(double x) { return x != x; } //check if nan - double version
 inline int nancheck2(float x) { return x != x; } //check if nan - float version
 
-/// Definition Functions used in main
+
 CameraParams Initialize(Settings s, int camera)
 { // Initialization of camera parameters in a CameraParams-object for input of settings and camera number
 
 	// Initialization and reading of all settings
 	Mat cameraMatrix, distCoeffs;
+	string in="INPUT/";
 	string CalibrationFile,  InputReference, OutputFile, CameraPoseFile, FeaturesFile;
 	Mat R, origin, RR, rvec, tvec;
 	int Position;
 	Point3f c;
 	switch(camera){ // Open calibration file and reference image depending on camera
 		case 1:
-			 CalibrationFile= s.CalibrationFile1;
-			 InputReference= s.InputReference1;
-			 CameraPoseFile= s.InputInitial1;
+			 CalibrationFile= in+s.CalibrationFile1;
+			 InputReference= in+s.InputReference1;
+			 CameraPoseFile= in+s.InputInitial1;
 			 OutputFile=s.OutputCameraPose1;
-			 FeaturesFile=s.InputFeatures1;
+			 FeaturesFile=in+s.InputFeatures1;
 			 break;
 		case 2:
-			 CalibrationFile= s.CalibrationFile2;
-			 InputReference= s.InputReference2;
-			 CameraPoseFile= s.InputInitial2;
+			 CalibrationFile= in+s.CalibrationFile2;
+			 InputReference= in+s.InputReference2;
+			 CameraPoseFile= in+s.InputInitial2;
 			 OutputFile=s.OutputCameraPose2;
-			 FeaturesFile=s.InputFeatures2;
+			 FeaturesFile=in+s.InputFeatures2;
 
 			 break;
 		case 3:
-			 CalibrationFile= s.CalibrationFile3;
-			 InputReference= s.InputReference3;
-			 CameraPoseFile= s.InputInitial3;
+			 CalibrationFile=in+s.CalibrationFile3;
+			 InputReference= in+s.InputReference3;
+			 CameraPoseFile= in+s.InputInitial3;
 			 OutputFile=s.OutputCameraPose3;
-			 FeaturesFile=s.InputFeatures3;
+			 FeaturesFile=in+s.InputFeatures3;
 			 break;
 	}
 
-	Size board_sz = s.boardSize;
-	float squareSize = s.squareSize;
+	Size board_sz = s.RefPatternSize;
 	float ResponseThreshold=s.ResponseThreshold;
 	float MinDistance=s.MinDistance;
 
@@ -805,7 +805,7 @@ CameraParams Initialize(Settings s, int camera)
 	// Computation extrinsic parameters
 
 
-	 if(!s.InputTypeRef){ // Camera pose estimation aleady done, read in external parameters from file
+	 if(!s.TypeCameraPose){ // Camera pose estimation aleady done, read in external parameters from file
 			FileStorage fs3(InputReference,FileStorage::READ);
 			 if (!fs3.isOpened())
 							{
@@ -827,7 +827,7 @@ CameraParams Initialize(Settings s, int camera)
 			else exit(1);
 
 			// Detect corner points in image but don't undistort them
-			vector<Point2f> sortedcorners =create_points(image, ResponseThreshold, MinDistance, s.responseRadius, board_sz, cameraMatrix, distCoeffs, s.showCorners);
+			vector<Point2f> sortedcorners =create_points(image, ResponseThreshold, MinDistance, s.ResponseRadius, board_sz, cameraMatrix, distCoeffs, s.ShowCorners);
 
 			// Read theoretical 3D world coordinates
 			ifstream input(CameraPoseFile);
@@ -874,9 +874,9 @@ CameraParams Initialize(Settings s, int camera)
 		{
 			f.push_back(tmp);
 		};
-		if(s.saveCameraPose){ // Save result camera pose estimation if needed
+		if(s.SaveCameraPose){ // Save result camera pose estimation if needed
 
-		saveCameraParams(OutputFile, R, tvec);
+		saveCameraParams(OutputFile,in, R, tvec);
 
 		}
 		CameraParams cam=CameraParams(R, tvec, cameraMatrix, c, distCoeffs, f);
@@ -1134,7 +1134,7 @@ void combined_error3(const real_1d_array &x, real_1d_array &fi, void *ptr)
 
  }
 void combined_error2(const real_1d_array &x, real_1d_array &fi, void *ptr)
-{ // Compute errors of all cameras combined for set of 2 cameras
+{ /// Compute errors of all cameras combined for set of 2 cameras
 
 	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
 
@@ -1153,7 +1153,7 @@ void combined_error2(const real_1d_array &x, real_1d_array &fi, void *ptr)
 
  }
 void combined_error1(const real_1d_array &x, real_1d_array &fi, void *ptr)
-{ // Compute errors of single camera 
+{ /// Compute errors of single camera 
 
 	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
 	//Errors Ef first camera
@@ -1163,7 +1163,7 @@ void combined_error1(const real_1d_array &x, real_1d_array &fi, void *ptr)
 		fi[k] = (nancheck(E1[k]) ? 0.0 : E1[k]) ; //if nan then no contribution to error-> not included in optimization
  }
 void combined_errorBF(const real_1d_array &x, double &func, void *ptr)
-{ // Compute errors of single camera
+{ /// Compute errors of single camera
 	func=0;
 	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
 	//Errors Ef first camera
@@ -1176,8 +1176,6 @@ void combined_errorBF(const real_1d_array &x, double &func, void *ptr)
 real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 { // Finds optimal coefficients for frame
   // Requires initial guess and frameOptimizer containing all necessary input
-  // Uses Levenberg-Marquardt algorithm that combines the steepest descent method with the Newton Method
-  // Recommended!
 
 
 		// Optimization configuration parameters
@@ -1187,8 +1185,8 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 	    ptr=&Frame;
 	    real_1d_array scale;
 		// Initialize optimization
-		minlmcreatev(Frame.CameraAmount*Frame.Pixels[0].size(), Coeff, Frame.diffStep, state);
-		minlmsetcond(state, Frame.epsg, Frame.epsf, Frame.epsx, Frame.maxits);
+		minlmcreatev(Frame.NumberOfCameras*Frame.Pixels[0].size(), Coeff, Frame.DiffStep, state);
+		minlmsetcond(state, Frame.Epsg, Frame.Epsf, Frame.Epsx, Frame.MaxIts);
 
 		switch(Coeff.length()){
 
@@ -1215,7 +1213,7 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 
 
 
-		switch(Frame.CameraAmount){ //Determine camera-amount and use appropriate function to compute errors
+		switch(Frame.NumberOfCameras){ //Determine camera-amount and use appropriate function to compute errors
 			case 1:
 				alglib::minlmoptimize(state, combined_error1, NULL, ptr); //optimize
 				break;
@@ -1253,8 +1251,8 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 			cout<<Coeff2.tostring(5)<<endl;
 
 
-		minlmcreatev(Frame.CameraAmount*Frame.Pixels[0].size(), Coeff2, Frame.diffStep, state);
-		minlmsetcond(state, Frame.epsg, Frame.epsf, Frame.epsx, Frame.maxits);
+		minlmcreatev(Frame.NumberOfCameras*Frame.Pixels[0].size(), Coeff2, Frame.DiffStep, state);
+		minlmsetcond(state, Frame.Epsg, Frame.Epsf, Frame.Epsx, Frame.MaxIts);
 
 		switch(Coeff2.length()){
 
@@ -1281,7 +1279,7 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 
 
 
-		switch(Frame.CameraAmount){ //Determine camera-amount and use appropriate function to compute errors
+		switch(Frame.NumberOfCameras){ //Determine camera-amount and use appropriate function to compute errors
 			case 1:
 				alglib::minlmoptimize(state, combined_error1, NULL, ptr); //optimize
 				break;
@@ -1305,7 +1303,6 @@ real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
 real_1d_array optimizeCoef2(real_1d_array Coeff, frameOptimizer Frame)
 { // Finds optimal coefficients for frame
   // Requires initial guess and frameOptimizer containing all necessary input
-  // Uses L-BFGS algorithm that builds and refines quadratic model of a function being optimized
 
 		// Optimization configuration parameters
 		minlbfgsstate state;
@@ -1315,8 +1312,8 @@ real_1d_array optimizeCoef2(real_1d_array Coeff, frameOptimizer Frame)
 
 	    real_1d_array scale="[100.0,1,1]";
 		// Initialize optimization
-	    minlbfgscreatef(3, Coeff, Frame.diffStep, state);
-	    minlbfgssetcond(state, Frame.epsg, Frame.epsf, Frame.epsx, Frame.maxits);
+	    minlbfgscreatef(3, Coeff, Frame.DiffStep, state);
+	    minlbfgssetcond(state, Frame.Epsg, Frame.Epsf, Frame.Epsx, Frame.MaxIts);
 
 		minlbfgssetscale(state, scale);
 		minlbfgssetprecscale( state);
@@ -1327,7 +1324,6 @@ real_1d_array optimizeCoef2(real_1d_array Coeff, frameOptimizer Frame)
 	    return Coeff;
 
 	}
-
 /// Main function
 int main ( )
 { // Main function to reconstruct time-dependent water surface.
@@ -1338,6 +1334,7 @@ int main ( )
 
 	//Read all settings
 	Settings s;
+	
 	string inputSettingsFile;
 	cout << "Give InputsettingsFile: " << flush; //Read which settingsfile has to be used
 	getline( cin, inputSettingsFile );  // gets everything the user ENTERs
@@ -1351,6 +1348,7 @@ int main ( )
 	fs.release();   // close Settings file
 	CameraParams cam1, cam2, cam3;
 	int max_threads = omp_get_max_threads();
+	string res="RESULTS/";
 
 	if(s.ThreadAmount>max_threads)
 	{
@@ -1362,7 +1360,7 @@ int main ( )
 	omp_set_num_threads(s.ThreadAmount);
 	vector<vector<vector<Corner> > > prevPixels(s.ThreadAmount);
 
-	switch(s.CameraAmount){ // Choice of cameras and initialize each camera separately
+	switch(s.NumberOfCameras){ // Choice of cameras and initialize each camera separately
 
 	case 1:
 		cam1=Initialize(s, 1);
@@ -1384,27 +1382,27 @@ int main ( )
 	vector<vector<real_1d_array> >CoefficientsList(s.ThreadAmount); // Output list of coefficients
 	vector<vector <double>> ErrorList(s.ThreadAmount); // Output list of corresponding errors
 
-	real_1d_array InitialCoeffs=s.Initialguess.c_str();
+	real_1d_array InitialCoeffs=s.InitialGuess.c_str();
 	vector<frameOptimizer> optimizers(s.ThreadAmount);
 
 	for(size_t i=0;i<s.ThreadAmount;i++){
 	vector<CameraParams> cams;
-	switch(s.CameraAmount){ //Choice of cameras and initialize optimization with appropriate camera amount
+	switch(s.NumberOfCameras){ //Choice of cameras and initialize optimization with appropriate camera amount
 
 	case 1:
 		cams.push_back(cam1);
-		optimizers[i]=frameOptimizer(1, cams, s.ErrorMetric, s.SurfaceModel, s.Lx, s.Ly, s.Scaling, s.epsg, s.epsf, s.epsx, s.maxits, s.diffStep);
+		optimizers[i]=frameOptimizer(1, cams, s.ErrorMetric, s.SurfaceModelParameters, s.Lx, s.Ly, s.Scaling, s.Epsg, s.Epsf, s.Epsx, s.MaxIts, s.DiffStep);
 		break;
 	case 2:
 		cams.push_back(cam1);
 		cams.push_back(cam2);
-		optimizers[i]=frameOptimizer(2, cams, s.ErrorMetric, s.SurfaceModel, s.Lx, s.Ly, s.Scaling, s.epsg, s.epsf, s.epsx, s.maxits, s.diffStep);
+		optimizers[i]=frameOptimizer(2, cams, s.ErrorMetric, s.SurfaceModelParameters, s.Lx, s.Ly, s.Scaling, s.Epsg, s.Epsf, s.Epsx, s.MaxIts, s.DiffStep);
 		break;
 	case 3:
 		cams.push_back(cam1);
 		cams.push_back(cam2);
 		cams.push_back(cam3);
-		optimizers[i]=frameOptimizer(3, cams, s.ErrorMetric, s.SurfaceModel, s.Lx, s.Ly, s.Scaling, s.epsg, s.epsf, s.epsx, s.maxits, s.diffStep);
+		optimizers[i]=frameOptimizer(3, cams, s.ErrorMetric, s.SurfaceModelParameters, s.Lx, s.Ly, s.Scaling, s.Epsg, s.Epsf, s.Epsx, s.MaxIts, s.DiffStep);
 		break;
 	default:
 		cout<<"Invalid amount of camera's"<<endl;
@@ -1422,7 +1420,7 @@ int main ( )
 	bool check2=false;
 	bool check3=false;
 
-	switch(s.CameraAmount){ // Choice of cameras and read image-names in every directory (for each camera)
+	switch(s.NumberOfCameras){ // Choice of cameras and read image-names in every directory (for each camera)
 
 	case 1:
 		InputDirectory1=s.InputDirectory1;
@@ -1465,37 +1463,37 @@ int main ( )
 		{
 			int tid = omp_get_thread_num();
 
-			vector<vector<Corner> > pixels(s.CameraAmount);
+			vector<vector<Corner> > pixels(s.NumberOfCameras);
 			// Detect corners in image i
 			if(i-j*images_thread>0.1){
 			
-			switch(s.CameraAmount){
+			switch(s.NumberOfCameras){
 
 							case 1:
-								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1, s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
+								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1, res+s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
 								break;
 							case 2:
-								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1,  s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
-								pixels[1]=readFeaturesImage( imageList2[nimages-i-1], cam2,  s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][1]);
+								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1,  res+ s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
+								pixels[1]=readFeaturesImage( imageList2[nimages-i-1], cam2,   res+s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][1]);
 								break;
 							case 3:
-								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1,  s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
-								pixels[1]=readFeaturesImage( imageList1[nimages-i-1], cam2,  s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][1]);
-								pixels[2]=readFeaturesImage( imageList3[nimages-i-1], cam3,  s.OutputDirectory3+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][2]);
+								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1,  res+ s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
+								pixels[1]=readFeaturesImage( imageList1[nimages-i-1], cam2,  res+ s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][1]);
+								pixels[2]=readFeaturesImage( imageList3[nimages-i-1], cam3,  res+ s.OutputDirectory3+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][2]);
 								break;
 							default:
 								cout<<"Error camera amount"<<endl;
 								exit(1);
 						}
 			}else{
-				switch(s.CameraAmount){
+				switch(s.NumberOfCameras){
 
 							case 1:
-								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1, s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
+								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1, res+ s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
 								break;
 							case 2:
-								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1, s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
-								pixels[1]=readFeaturesFirstImage( imageList2[nimages-i-1], cam2, s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s);
+								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1,  res+s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
+								pixels[1]=readFeaturesFirstImage( imageList2[nimages-i-1], cam2,  res+s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s);
 								break;
 							case 3:
 								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1, s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
@@ -1522,7 +1520,7 @@ int main ( )
 
 			}
 
-			if(s.CameraAmount>1){ // Procedure for more than 1 camera
+			if(s.NumberOfCameras>1){ // Procedure for more than 1 camera
 				
 			// Starting from 6th image: find best initial guess out of 5 previous time step and first initial guess (flat surface)
 			if(i-j*images_thread>4){
@@ -1540,7 +1538,7 @@ int main ( )
 				E6.insert( E6.end(), E66.begin(), E66.end() );
 			}
 			}
-			if(s.CameraAmount>2){ // Procedure for 3 cameras
+			if(s.NumberOfCameras>2){ // Procedure for 3 cameras
 
 			// Starting from 6th image: find best initial guess out of 5 previous time step and first initial guess (flat surface)
 			if(i-j*images_thread>4){
@@ -1613,12 +1611,12 @@ int main ( )
 			// Store optimized coefficients
 			CoefficientsList[tid].push_back(coefficients);
 
-			if(s.saveErrors)
+			if(s.SaveResiduals)
 			{ // Save errors corresponding to optimized coefficients
 				
 				// Compute errors corresponding to optimized coefficients for camera 1
 				vector<double> Error;
-				switch (s.CameraAmount){
+				switch (s.NumberOfCameras){
 				case 1:{
 					Error=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric,optimizers[tid].Params, optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], coefficients);
 					break;}
@@ -1648,13 +1646,13 @@ int main ( )
 
 
 	//Write results to files
-	writeArray(CoefficientsList, s.OutputFileName);
-	if(s.saveErrors)
-	{writeArrayErrors(ErrorList, s.OutputFileNameErrors);}
+
+	writeArray(CoefficientsList, s.OutputFileName, res);
+	if(s.SaveResiduals)
+	{writeArrayErrors(ErrorList, s.OutputFileNameResiudals, res);}
 	std::chrono::steady_clock::time_point end1= std::chrono::steady_clock::now();
 	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end1 - begin1).count() <<std::endl;
 
-	// Print time needed and end of program
 	timestamp ( );
     cout << "\n";
     cout << "Surface reconstruction \n";

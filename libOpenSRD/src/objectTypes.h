@@ -187,7 +187,7 @@ class frameOptimizer
 public:
 
 	// Camera set-up and surface model parameters
-	size_t CameraAmount;
+	size_t NumberOfCameras;
 	vector<CameraParams> Cameras;
 	int ErrorMetric;
 	int Params;
@@ -196,11 +196,11 @@ public:
 	real_1d_array Scaling;
 
 	// Optimization parameters
-	double epsg;
-	double epsf;
-	double epsx;
-	ae_int_t maxits;
-	double diffStep;
+	double Epsg;
+	double Epsf;
+	double Epsx;
+	ae_int_t MaxIts;
+	double DiffStep;
 
 	// Input per image
 	vector<vector<Point3f> > Pixels;
@@ -209,38 +209,38 @@ public:
 public:
 	// Constructors
 	frameOptimizer (){
-		CameraAmount=0;
+		NumberOfCameras=0;
 		vector<CameraParams> Cameras;
 		ErrorMetric=0;
 		Params=0;
 		Lx=0;
 		Ly=0;
 		Scaling="[0]";
-		epsg=0;
-		epsf=0;
-		epsx=0;
-		maxits=0;
-		diffStep=0;
+		Epsg=0;
+		Epsf=0;
+		Epsx=0;
+		MaxIts=0;
+		DiffStep=0;
 	}
 	frameOptimizer (const frameOptimizer& cpy){
-		CameraAmount=cpy.CameraAmount;
+		NumberOfCameras=cpy.NumberOfCameras;
 		Cameras=cpy.Cameras;
 		ErrorMetric=cpy.ErrorMetric;
 		Params=cpy.Params;
 		Lx=cpy.Lx;
 		Ly=cpy.Ly;
 		Scaling=cpy.Scaling;
-		epsg=cpy.epsg;
-		epsf=cpy.epsf;
-		epsx=cpy.epsx;
-		maxits=cpy.maxits;
-		diffStep=cpy.diffStep;
+		Epsg=cpy.Epsg;
+		Epsf=cpy.Epsf;
+		Epsx=cpy.Epsx;
+		MaxIts=cpy.MaxIts;
+		DiffStep=cpy.DiffStep;
 		Pixels=cpy.Pixels;
 		fs=cpy.fs;
 		}
-	frameOptimizer (int i_CameraAmount, vector<CameraParams> i_Cameras, int i_ErrorMetric, int i_Params, float i_Lx, float i_Ly, string i_Scaling, double i_epsg, double i_epsf, double i_epsx, int i_maxits, double i_diffStep) {
+	frameOptimizer (int i_NumberOfCameras, vector<CameraParams> i_Cameras, int i_ErrorMetric, int i_Params, float i_Lx, float i_Ly, string i_Scaling, double i_epsg, double i_epsf, double i_epsx, int i_maxits, double i_diffStep) {
 
-		CameraAmount=i_CameraAmount;
+		NumberOfCameras=i_NumberOfCameras;
 		Cameras=i_Cameras;
 		ErrorMetric=i_ErrorMetric;
 		Params=i_Params;
@@ -248,21 +248,21 @@ public:
 		Ly=i_Ly;
 		Scaling = i_Scaling.c_str();
 
-		epsg=i_epsg;
-		epsf=i_epsf;
-		epsx=i_epsx;
-		maxits=i_maxits;
-		diffStep=i_diffStep;
+		Epsg=i_epsg;
+		Epsf=i_epsf;
+		Epsx=i_epsx;
+		MaxIts=i_maxits;
+		DiffStep=i_diffStep;
     }
 	// Change set of image points for which optimization is run
 	void changePixels(vector<vector<Corner> > i_Corners)
 	{
 		// Reset vector of features f and pixel coordinates
-		fs=vector<vector<Point3f> >(CameraAmount);
-		Pixels=vector<vector<Point3f> >(CameraAmount);
+		fs=vector<vector<Point3f> >(NumberOfCameras);
+		Pixels=vector<vector<Point3f> >(NumberOfCameras);
 
 		// Fill in updated values
-		for(size_t i =0; i<CameraAmount; i++){
+		for(size_t i =0; i<NumberOfCameras; i++){
 			for(size_t j=0; j<i_Corners[i].size(); j++){
 				if(i_Corners[i][j].getFound()){
 					Pixels[i].push_back(i_Corners[i][j].getCoords());
@@ -287,62 +287,63 @@ public:
     //Read serialization for this class
     void read(const FileNode& node)
     { ///Read node in settings file
-        node["InputType"]  >> InputType;
-        node["InputTypeRef"]  >> InputTypeRef;
+		node["NumberOfCameras"]  >> NumberOfCameras;
+		node["TypeCameraPose"]  >> TypeCameraPose;
+        node["TypeFeatureInput"]  >> TypeFeatureInput;
+        node["ThreadAmount"]  >> ThreadAmount;
+        
+        node["SaveCameraPose"]  >> SaveCameraPose;
+        node["SaveFeatureCoordinates"]  >> SaveFeatureCoordinates;
+        node["SaveResiduals"]  >> SaveResiduals;
+        node["ShowCorners"]  >> ShowCorners;
+
         node["InputDirectory1"]  >> InputDirectory1;
-        node["CalibrationFile1"]  >> CalibrationFile1;
-        node["InputReference1"]  >> InputReference1;
-        node["CalibrationFile2"]  >> CalibrationFile2;
         node["InputDirectory2"]  >> InputDirectory2;
-        node["InputReference2"]  >> InputReference2;
         node["InputDirectory3"]  >> InputDirectory3;
-     	node["CalibrationFile3"]  >> CalibrationFile3;
-        node["InputReference3"]  >> InputReference3;
-        node["BoardSize_Width" ] >> boardSize.width;
-        node["BoardSize_Height"] >> boardSize.height;
-        node["PatternSize_Width" ] >> PatternSize.width;
-        node["PatternSize_Height"] >> PatternSize.height;
-        node["Square_Size"]  >> squareSize;
-        node["InputInitial1"] >> InputInitial1;
-        node["InputInitial2"] >> InputInitial2;
-        node["InputInitial3"] >> InputInitial3;
-        node["InputInitial1"] >> InputInitial1;
-        node["InputInitial2"] >> InputInitial2;
-        node["InputInitial3"] >> InputInitial3;
         node["InputFeatures1"] >> InputFeatures1;
         node["InputFeatures2"] >> InputFeatures2;
         node["InputFeatures3"] >> InputFeatures3;
-        node["ErrorMetric"]  >> ErrorMetric;
-        node["CameraAmount"]  >> CameraAmount;
-        node["ResponseThreshold"]  >> ResponseThreshold;
-        node["MinDistance"]  >> MinDistance;
-        node["SurfaceModel"]  >> SurfaceModel;
-        node["Lx"]  >> Lx;
-        node["Ly"]  >> Ly;
-        node["OutputFileName"]  >> OutputFileName;
-        node["showCorners"]  >> showCorners;
-        node["saveErrors"]  >> saveErrors;
-        node["saveCameraPose"]  >> saveCameraPose;
-        node["OutputFileNameErrors"]  >> OutputFileNameErrors;
-        node["responseRadius"]  >> responseRadius;
-        node["OutputCameraPose1"]  >> OutputCameraPose1;
+        node["InputInitial1"] >> InputInitial1;
+        node["InputInitial2"] >> InputInitial2;
+        node["InputInitial3"] >> InputInitial3;      
+        node["InputReference1"]  >> InputReference1;
+        node["InputReference2"]  >> InputReference2;
+        node["InputReference3"]  >> InputReference3;
+
+        node["CalibrationFile1"]  >> CalibrationFile1;
+        node["CalibrationFile2"]  >> CalibrationFile2;       
+     	node["CalibrationFile3"]  >> CalibrationFile3;
+     	
+     	node["OutputCameraPose1"]  >> OutputCameraPose1;
         node["OutputCameraPose2"]  >> OutputCameraPose2;
         node["OutputCameraPose3"]  >> OutputCameraPose3;
         node["OutputDirectory1"]  >> OutputDirectory1;
         node["OutputDirectory2"]  >> OutputDirectory2;
         node["OutputDirectory3"]  >> OutputDirectory3;
-        node["MatchesThreshold"]  >> MatchesThreshold;
-        node["saveFeatureCoordinates"]  >> saveFeatureCoordinates;
-        node["ThreadAmount"]  >> ThreadAmount;
-        node["Initialguess"]  >> Initialguess;
-        node["Scaling"]  >> Scaling;
-        node["epsg"]  >> epsg;
-        node["epsf"]  >> epsf;
-        node["epsx"]  >> epsx;
-        node["maxits"]  >> maxits;
-        node["diffStep"]  >> diffStep;
+        node["OutputFileName"]  >> OutputFileName;
+        node["OutputFileNameResiudals"]  >> OutputFileNameResiudals;
+        
+        node["FeaturePatternSize_Width" ] >> FeaturePatternSize.width;
+        node["FeaturePatternSize_Height"] >> FeaturePatternSize.height;
+        node["Lx"]  >> Lx;
+        node["Ly"]  >> Ly;
+        node["RefPatternSize_Width" ] >> RefPatternSize.width;
+        node["RefPatternSize_Height"] >> RefPatternSize.height;
 
-     }
+        node["DiffStep"]  >> DiffStep;
+        node["Epsf"]  >> Epsf;
+        node["Epsg"]  >> Epsg;        
+        node["Epsx"]  >> Epsx;      
+        node["ErrorMetric"]  >> ErrorMetric;
+        node["InitialGuess"]  >> InitialGuess;
+        node["MatchesThreshold"]  >> MatchesThreshold;
+        node["MaxIts"]  >> MaxIts;
+        node["MinDistance"]  >> MinDistance;
+        node["Scaling"]  >> Scaling;
+        node["SurfaceModelParameters"]  >> SurfaceModelParameters;
+        node["ResponseThreshold"]  >> ResponseThreshold;
+        node["ResponseRadius"]  >> ResponseRadius;
+             }
 
    static bool readStringList(vector<string>& l, string dir )
     { ///Read all files in directory and store in vector string
@@ -376,67 +377,70 @@ public:
         return true;
     }
 public:
-    int ThreadAmount;			 // Amount of threads used to parallelize
+   
 
-    //Input/output
-   	bool InputType;				 // Type of input for reconstruction: true(1) for images, false (0) for file
-   	bool InputTypeRef;			 // Type of input for camera pose estimation: true(1) for image, false (0) for file
-    bool showCorners;			 // Show Detected corners in each image
-    bool saveErrors;			 // Write mean error over all image points out to file
-    bool saveFeatureCoordinates; // Save feature coordinates (pixels) to text file
-    bool saveCameraPose;		 // Save camera pose estimation in file
-   	string InputDirectory1;      // The name of the directory of images - camera 1
+    //General settings
+    int NumberOfCameras;		 // Number of cameras's used
+   	bool TypeFeatureInput;		 // Type of input for surface reconstruction: true(1) for images, false (0) for file
+   	bool TypeCameraPose;		 // Type of input for camera pose estimation: true(1) for image, false (0) for file
+   	int ThreadAmount;			 // Number of threads used to parallelize
+   	
+   	//Output settings
+    bool SaveCameraPose;		 // Save camera pose estimation in file
+    bool SaveFeatureCoordinates; // Save feature coordinates (pixels) to text file
+ 	bool SaveResiduals;			 // Write mean resiudal error over all image points out to file
+  	bool ShowCorners;			 // Show Detected corners in each image
+   	
+   	//Input
+ 	string InputDirectory1;      // The name of the directory of images - camera 1
     string InputDirectory2;      // The name of the directory of images - camera 2
   	string InputDirectory3;      // The name of the directory of images - camera 3
-    string CalibrationFile1;     // The name of the calibration file used - camera 1
-    string CalibrationFile2;     // The name of the calibration file used - camera 2
-    string CalibrationFile3;     // The name of the calibration file used - camera 3
- 	string InputReference1;		 // The name of the reference image (no water) - camera 1
- 	string InputReference2;		 // The name of the reference image (no water) - camera 2
- 	string InputReference3;		 // The name of the reference image (no water) - camera 3
+ 	string InputFeatures1;		 // The name of the file of fixed locations of features viewed by camera 1
+ 	string InputFeatures2;		 // The name of the file of fixed locations of features viewed by camera 2
+ 	string InputFeatures3;		 // The name of the file of fixed locations of features viewed by camera 3 
  	string InputInitial1;		 // The name of the file of vertex locations during camera pose estimation - camera 1
  	string InputInitial2;		 // The name of the file of vertex locations during camera pose estimation - camera 2
  	string InputInitial3;		 // The name of the file of vertex locations during camera pose estimation - camera 3
- 	string InputFeatures1;		 // The name of the file of fixed locations of features viewed by camera 1
- 	string InputFeatures2;		 // The name of the file of fixed locations of features viewed by camera 2
- 	string InputFeatures3;		 // The name of the file of fixed locations of features viewed by camera 3
+ 	string InputReference1;		 // The name of the reference image (no water) - camera 1
+ 	string InputReference2;		 // The name of the reference image (no water) - camera 2
+ 	string InputReference3;		 // The name of the reference image (no water) - camera 3
+
+	//Calibration
+    string CalibrationFile1;     // The name of the calibration file used - camera 1
+    string CalibrationFile2;     // The name of the calibration file used - camera 2
+    string CalibrationFile3;     // The name of the calibration file used - camera 3
+
+	//Output
  	string OutputCameraPose1;	 // The name of the output-file for camera pose estimation - camera 1
  	string OutputCameraPose2;	 // The name of the output-file for camera pose estimation - camera 2
  	string OutputCameraPose3;	 // The name of the output-file for camera pose estimation - camera 3
  	string OutputDirectory1;	 // The name of the output-directory for feature coordinates (pixels) - camera 1
  	string OutputDirectory2;	 // The name of the output-directory for feature coordinates (pixels) - camera 2
  	string OutputDirectory3;	 // The name of the output-directory for feature coordinates (pixels) - camera 3
- 	vector<string> imageList1;	 // List of images - camera 1
-    vector<string> imageList2;	 // List of images - camera 2
-    vector<string> imageList3;	 // List of images - camera 3
     string OutputFileName;		 // Name of output-file coefficients
-    string OutputFileNameErrors; // Name of output-file errors
+    string OutputFileNameResiudals; // Name of output-file of residual errors
 
     //Detection parameters
-    Size boardSize;              // The size of the calibration board -> Number of items by width and height
-	Size PatternSize;            // The size of the pattern -> Number of items by width and height
-	float squareSize;            // The size of a square in your defined unit (point, millimeter,etc).
-    float ResponseThreshold;	 // Threshold for corner response to keep interesting points
-    float MinDistance;			 // Minimum distance between corner points
-    int responseRadius;			 // Radius for calculation error measure
-    float MatchesThreshold;		 // Threshold of maximum distance (pixels) between predicted and detected feature point
-
-
-    //Reconstruction parameters
-    int SurfaceModel;			 // Number of coefficients/parameters in surface model
-    float Lx;					 // Length scale in x-direction (crosswise)
-    float Ly;					 // Length scale in y-direction (streamwise)
-    string Initialguess;	 	 // Initial guess for coefficients according to model (length=SurfaceModel)
-    string Scaling;	 			 // Set scale of coefficients (length=SurfaceModel)
+	Size FeaturePatternSize;     // The size of the feature pattern -> Number of items by width and height
+    float Lx;					 // Length scale in (lateral) x-direction
+    float Ly;					 // Length scale in (streamwise) y-direction 
+    Size RefPatternSize;         // The size of the reference board -> Number of items by width and height
 
     //Optimization parameters
+    double DiffStep;			 // Numerical differentiation step (calculation gradient)
+    double Epsf;				 // Min function change as stopping condition
+    double Epsg;				 // Min Gradient norm as stopping condition
+    double Epsx;				 // Min step size as stopping condition
     int ErrorMetric;		 	 // Type of error metric used
-    int CameraAmount;			 // Amount of cameras's used
-    double epsg;				 // Min Gradient norm as stopping condition
-    double epsf;				 // Min function change as stopping condition
-    double epsx;				 // Min step size as stopping condition
-    int maxits;					 // Max amount of iterations for optimization procedure
-    double diffStep;			 // Numerical differentiation step (calculation gradient)
+    string InitialGuess;	 	 // Initial guess for coefficients according to model (length=SurfaceModelParameters)
+    float MatchesThreshold;		 // Threshold of maximum distance (pixels) between predicted and detected feature point
+    int MaxIts;					 // Max amount of iterations for optimization procedure
+    float MinDistance;			 // Minimum distance between corner points
+    string Scaling;	 			 // Set scale of coefficients (length=SurfaceModelParameters)
+    int SurfaceModelParameters;	 // Number of coefficients/parameters in surface model
+    int ResponseRadius;			 // Radius for calculation error measure
+    float ResponseThreshold;	 // Threshold for corner response to keep interesting points
+
 };
 
 #endif /* OBJECTTYPES_H_ */

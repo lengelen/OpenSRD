@@ -40,9 +40,9 @@ bool readStringList(vector<string>& l, string dir )
 }
 
 // Write functions
-void writeMatToFile(cv::Mat& m, const char* filename, string  outputDirectory)
+void writeMatToFile(cv::Mat& m, const char* file, string  outputDirectory)
 { ///write a Float-matrix to output-directory, using filename
-    std::ofstream fout(outputDirectory+filename);
+    std::ofstream fout(outputDirectory+file);
 
     if(!fout)
     {
@@ -60,12 +60,12 @@ void writeMatToFile(cv::Mat& m, const char* filename, string  outputDirectory)
 
     fout.close();
 }
-void writeVecToFile(vector<Corner> features, string  file)
-{///write a Float-Vector of corner points to file with path name out
-	std::ofstream fout(file);
+void writeVecToFile(vector<Corner> features, string  path)
+{///write a Float-Vector of corner points to file with path name path
+	std::ofstream fout(path);
     if(!fout)
     {
-        cout<<"File Not Opened: "<<file<<endl;  return;
+        cout<<"File Not Opened: "<<path<<endl;  return;
     }
 
     for(size_t i=0; i<features.size(); i++)
@@ -75,9 +75,9 @@ void writeVecToFile(vector<Corner> features, string  file)
     }
     fout.close();
 }
-void writePointsToFile(vector<Point3f> features, string  file)
+void writePointsToFile(vector<Point3f> features,  string  file, string outputDirectory)
 {///write a Float-Vector of 3D feature points to file with path name out
-	std::ofstream fout(file);
+	std::ofstream fout(outputDirectory+file);
     if(!fout)
     {
         cout<<"File Not Opened: "<<file<<endl;  return;
@@ -92,9 +92,9 @@ void writePointsToFile(vector<Point3f> features, string  file)
 
 }
 
-void writeArray(vector<vector<real_1d_array> >planes, string  out)
+void writeArray(vector<vector<real_1d_array> >planes,  string  file, string outputDirectory)
 {///write an Array of surface coefficients to file with path name out
-    ofstream fout(out);
+    ofstream fout(outputDirectory+file);
 
 	if(!fout)
 	{
@@ -111,9 +111,9 @@ void writeArray(vector<vector<real_1d_array> >planes, string  out)
 
     fout.close();
 }
-void writeArrayErrors(vector<vector<double> > errors, string  out)
+void writeArrayErrors(vector<vector<double> > errors,  string  file, string outputDirectory)
 {///write an Array of surface coefficients to file with path name out
-    ofstream fout(out);
+    ofstream fout(outputDirectory+file);
 
     if(!fout)
     {
@@ -130,9 +130,9 @@ void writeArrayErrors(vector<vector<double> > errors, string  out)
 
     fout.close();
 }
-void saveCameraParams( const string& filename, Mat Rotationmatrix, Mat TranslationVector)
+void saveCameraParams( const string& file, string outputDirectory, Mat Rotationmatrix, Mat TranslationVector)
 { ///Saves the results into file with filename
-    FileStorage fs( filename, FileStorage::WRITE ); //Open filestorage file
+    FileStorage fs( outputDirectory+file, FileStorage::WRITE ); //Open filestorage file
 
     //Writing out the results
     fs << "Rotationmatrix" << Rotationmatrix;
