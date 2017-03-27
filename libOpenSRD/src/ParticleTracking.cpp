@@ -1,8 +1,19 @@
 /*
- * PartickeTracking.cpp
- *
- *  Created on: Nov 25, 2016
- *      Author: lengelen
+	OpenSRD 1.0.0	
+	Copyright (C) 2017  Lukas Engelen
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ParticleTracking.h"
 #include "ReadAndWrite.h"
@@ -432,7 +443,7 @@ vector<Point2f> removeDoubles(vector<Point2f> points, Mat response, float mindis
 	}
 	return points;
 }
-vector<Point2f> create_points(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size boardSize, Mat cameraMatrix, Mat distCoeffs, bool showCorners)
+vector<Point2f> create_points(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size boardSize, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners)
 { /// Do all operations on image to obtain a sorted list of corner points
 
 	int CornerPoints=boardSize.width*boardSize.height; //number of points to be detected
@@ -476,7 +487,7 @@ vector<Point2f> create_points(Mat img, float ResponseThreshold, float minDistanc
 	return vector<Point2f>(0); // Return empty vector to alert problem
 	}
 	vector<Point2f> sortedcorners=sortPattern(corners2, boardSize);
-	if(showCorners){ // Show the detected corners if users requires it
+	if(ShowCorners){ // Show the detected corners if users requires it
 		namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
 		resizeWindow("Display window", 800, 500);
 		for(size_t t=0; t<sortedcorners.size(); t++){
@@ -598,7 +609,7 @@ return response;
 
 /// Master functions to detect and update corners in images
 
-vector<Corner> createCornerList(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size PatternSize, Mat cameraMatrix, Mat distCoeffs, bool showCorners)
+vector<Corner> createCornerList(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size PatternSize, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners)
 { /// Do all operations on image to create a sorted list of corner points
   /// Sort them in systematic way
 
@@ -620,7 +631,7 @@ vector<Corner> createCornerList(Mat img, float ResponseThreshold, float minDista
 	return vector<Corner>(0); // Return empty vector to alert problem
 	}
 	vector<Point2f> sortedcorners=sortPattern(PotentialCorners, PatternSize); // Sort pattern according to u and v based on patternsize
-	if(showCorners){ // Show the detected corners if users requires it
+	if(ShowCorners){ // Show the detected corners if users requires it
 		namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
 		resizeWindow("Display window", 800, 500);
 		for(size_t t=0; t<sortedcorners.size(); t++){
@@ -644,11 +655,11 @@ vector<Corner> createCornerList(Mat img, float ResponseThreshold, float minDista
 	transform(points_undistorted.begin(), points_undistorted.end(),iD.begin(), cornerList.begin(), createCorneriD<Corner>());
 	return cornerList;
 }
-vector<Corner> updateCornerlist(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, float MatchesThreshold, Mat cameraMatrix, Mat distCoeffs, bool showCorners, vector<Corner> prevCorners){
+vector<Corner> updateCornerlist(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, float MatchesThreshold, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners, vector<Corner> prevCorners){
 	/// Update already created corner list prevConers
 	/// Use newly detected corners in new image, based on threshold values
 	vector<Point2f> PotentialCorners=detectPotentialCorners(img, ResponseThreshold, minDistance, detectionRadius);
-	if(showCorners){ // Show the detected corners if users requires it
+	if(ShowCorners){ // Show the detected corners if users requires it
 			namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
 			resizeWindow("Display window", 800, 500);
 			for(size_t t=0; t<PotentialCorners.size(); t++){
@@ -672,7 +683,7 @@ vector<Corner> updateCornerlist(Mat img, float ResponseThreshold, float minDista
 vector<Corner> readFeaturesImage(string name, CameraParams cam, string OutputName, Settings s, vector<Corner> prevCorners)
 { ///Finds all feature points in image, returns vector of matched corners
   /// If requested write Feature coordinates to file
-	if(s.InputType){ // Detect in images
+	if(s.TypeFeatureInput){ // Detect in images
 
 	Mat view = imread(name, IMREAD_GRAYSCALE); //Reading in starts from last image to first to avoid feature loss due to heavy turbulence
 	if( !view.data )
@@ -680,9 +691,9 @@ vector<Corner> readFeaturesImage(string name, CameraParams cam, string OutputNam
 	//else cout<<".."<<endl;
 
 	// Detect features in image and undistort them
-	vector<Corner> Corners=updateCornerlist(view, s.ResponseThreshold, s.MinDistance, s.responseRadius, s.MatchesThreshold, cam.K, cam.distCoeffs, s.showCorners, prevCorners);
+	vector<Corner> Corners=updateCornerlist(view, s.ResponseThreshold, s.MinDistance, s.ResponseRadius, s.MatchesThreshold, cam.K, cam.distCoeffs, s.ShowCorners, prevCorners);
 
-	if(s.saveFeatureCoordinates){ // Save to file if requested
+	if(s.SaveFeatureCoordinates){ // Save to file if requested
 
 		writeVecToFile(Corners, OutputName);}
 	return Corners;
@@ -710,15 +721,15 @@ vector<Corner> readFeaturesFirstImage(string name, CameraParams cam, string Outp
 { ///Finds all feature points in image, returns vector of sorted image points
   /// If requested write Feature coordinates to file
 
-	if(s.InputType){// Detect corners in images
+	if(s.TypeFeatureInput){// Detect corners in images
 	Mat view = imread(name, IMREAD_GRAYSCALE); //Reading in starts from last image to first to avoid feature loss due to heavy turbulence
 	if( !view.data )
 		   cout <<"could not load image:"<<name <<endl;
 	else cout<<".."<<endl;
 
 	// Detect features in image and undistort them
-	vector<Corner> Corners= createCornerList(view, s.ResponseThreshold, s.MinDistance, s.responseRadius, s.PatternSize, cam.K, cam.distCoeffs, s.showCorners);
-	if(s.saveFeatureCoordinates){ // Write coordinates to text file if requested
+	vector<Corner> Corners= createCornerList(view, s.ResponseThreshold, s.MinDistance, s.ResponseRadius, s.FeaturePatternSize, cam.K, cam.distCoeffs, s.ShowCorners);
+	if(s.SaveFeatureCoordinates){ // Write coordinates to text file if requested
 		writeVecToFile(Corners, OutputName);}
 	return Corners;
 	}
