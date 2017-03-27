@@ -1,47 +1,39 @@
 /*
-	OpenSRD 1.0.0
-    Copyright (C) 2017  Lukas Engelen
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * main.h
+ *
+ *  Created on: Feb 28, 2017
+ *      Author: lengelen
  */
-#ifndef MAIN_H
-#define MAIN_H
 
-#include "ParticleTracking.h"
-#include "ReadAndWrite.h"
-#include "NumericalSimulations.h"
-#include "minpack.hpp"
+#ifndef MAIN_H_
+#define MAIN_H_
 
-//Find intersection of rays with with surfaces
-void findIntersection_constant( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 1 coefficients
-void findIntersection_linear( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 3 coefficients
-void findIntersection_1storder( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 5 coefficients
-void findIntersection_2ndorder( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 8 coefficients
-void findIntersection_3rdorder( int n, double x[], double fvec[], int *iflag, double params[] ); //Find intersection of ray cq' with surface characterized by 12 coefficients
 
-inline int nancheck(double x); //check if nan - double version
-inline int nancheck2(float x); //check if nan - float version
+#include <iostream>
+#include <ctype.h>
+#include "opencv2/calib3d/calib3d.hpp"
+#include <sys/param.h>
+#include <unistd.h>
+#include <string>
+#include <stdio.h>
+#include <vector>
+#include <fstream>
+#include "opencv2/core/core.hpp"
+#include "opencv2/video/tracking.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/videoio/videoio.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/features2d.hpp"
+#include <opencv2/imgcodecs.hpp>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <map>
+#include <list>
+#include <sstream>
 
-CameraParams Initialize(Settings s, int camera); // Initialization of camera parameters in a CameraParams-var for input of settings and camera number
+using namespace std;
+using namespace cv;
 
-//Optimization of coefficients
-vector<double> compute_error(float Lx, float Ly, int ErrorMetric, int Params, CameraParams Camera, vector<Point3f> Pixels, vector<Point3f> f, real_1d_array Coeff); // Compute errors Ef for all feature points of one camera
-void combined_error3(const real_1d_array &x, real_1d_array &fi, void *ptr); // Compute errors of all cameras combined for set of 3 cameras
-void combined_error2(const real_1d_array &x, real_1d_array &fi, void *ptr); // Compute errors of all cameras combined for set of 2 cameras
-void combined_error1(const real_1d_array &x, real_1d_array &fi, void *ptr); // Compute errors of single camera
-real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame); // Finds optimal coefficicients for frame, requires initial guess and FrameOptimizer containing all necessary input
- 
-void Simulate();
-void SimulateFeaturesF();
-#endif
+#endif /* MAIN_H_ */
