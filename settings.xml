@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<Settings>
+	
+  <!-- Number of camera's-->
+  <NumberOfCameras>1</NumberOfCameras>
+  <!-- Type of reference input for camera pose estimation: image->true:1, file->false:0-->
+  <TypeCameraPose>1</TypeCameraPose>
+  <!-- Amount of threads used-->
+  <ThreadAmount>1</ThreadAmount>
+  
+  <!-- Save camera pose estimation in text file-->
+  <SaveCameraPose>0</SaveCameraPose>
+  <!-- Show image with found corners-->
+  <ShowCorners>0</ShowCorners>
+
+  <!-- Name of the input directory of camera 1-->
+  <InputDirectory1>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M8/Cam2/ProcA3"</InputDirectory1>
+  <!-- Name of the input directory of camera 2-->
+  <InputDirectory2>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M9/Cam1/MED_per2"</InputDirectory2>
+  <!-- Name of the input directory of camera 3-->
+  <InputDirectory3>"DATA/CAM_3"</InputDirectory3>
+  <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 1-->
+  <InputInitial1>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/VerticesPoseEstimation2.txt"</InputInitial1>
+   <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 2-->
+  <InputInitial2>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/VerticesPoseEstimation1.txt"</InputInitial2>
+  <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 3-->
+  <InputInitial3>"VerticesPoseEstimation_3.txt"</InputInitial3>
+  <!-- Name of the reference image/file - camera 1-->
+  <InputReference1>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/Cam2/Processed/processed2.png"</InputReference1>
+  <!-- Name of the reference image - camera 2-->
+  <InputReference2>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/Cam1/Processed/processed2.png"</InputReference2>
+  <!-- Name of the reference image - camera 3-->
+  <InputReference3>"REF3.png"</InputReference3>
+  
+  <!-- Name of the calibration file of the camera 1-->
+  <CalibrationFile1>"/home/lengelen/Documents/Doctoraat/Calib/Calib_20170508-2.yml"</CalibrationFile1>
+  <!-- Name of the calibration file of the camera 2-->
+  <CalibrationFile2>"/home/lengelen/Documents/Doctoraat/Calib/Calib_20170508-1.yml"</CalibrationFile2>
+  <!-- Name of the calibration file of the camera 3-->
+  <CalibrationFile3>"Calib_C3.yml"</CalibrationFile3>
+  
+  <!-- Name of ouput file for saving camera pose estimation camera 1-->
+  <OutputCameraPose1>"/home/lengelen/Documents/Doctoraat/Measurements/20170412/M14/Cam2/Camera_Pose_1.txt"</OutputCameraPose1>
+  <!-- Name of ouput file for saving camera pose estimation camera 2-->
+  <OutputCameraPose2>"Camera_Pose_2.txt"</OutputCameraPose2>
+  <!-- Name of ouput file for saving camera pose estimation camera 3-->
+  <OutputCameraPose3>"Camera_Pose_3.txt"</OutputCameraPose3>
+  <!-- Name of ouput file for optimized coefficients according to chosen surface model-->
+  <OutputFileName>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M8/Cam2/ProcA3_1.txt"</OutputFileName>
+   <!-- Name of ouput file for center location processed area per frame-->
+  <OutputFileCenters>"/home/lengelen/Documents/Doctoraat/Measurements/Ms_20170607/June7-4/Cam1/CentersA2_per10_flatstep5_longnolim.txt"</OutputFileCenters>
+ 
+  
+  <!-- Length scale in x-direction (lateral direction)(mm)-->
+  <Lx>100</Lx>
+  <!-- Length scale in y-direction (streamwise direction)(mm)-->
+  <Ly>100</Ly>
+  <!-- Number of rows and columns of reference pattern -->
+  <RefPatternSize_Width>10</RefPatternSize_Width>
+  <RefPatternSize_Height>39</RefPatternSize_Height>
+  <!-- Width/length of checquerboard squares-->
+  <gridSize>10</gridSize>
+  
+
+
+  <!-- Numerical differentation step for calculation of gradient-->
+  <DiffStep>5</DiffStep>
+  <!-- Function-value based stopping condition-->
+  <Epsf>0</Epsf>
+  <!-- Gradient based stopping condition-->
+  <Epsg>0.000000001</Epsg>
+  <!-- Step size-based stopping condition-->
+  <Epsx>0</Epsx>
+   <!-- Initial guess to start optimization in each thread-->
+  <InitialGuess>"[77.00,-3.5000]"</InitialGuess>
+  <!-- Maximum distance between located and predicted feature point -->
+  <MatchesThreshold>10</MatchesThreshold>
+  <!-- Maximum number of iterations during optimization-->
+  <MaxIts>0</MaxIts>
+  <!-- Minimum distance in pixels between corner points-->
+  <MinDistance>18</MinDistance>
+  <!-- Scaling of coefficients for optimization (length=SurfaceModelParameters)-->
+  <Scaling>"[1.0,10.000,10.000,10.000,10.000]"</Scaling>
+  <!-- Number of parameters used in the surface model-->
+  <SurfaceModelParameters>3</SurfaceModelParameters>
+  <!-- Radius to calculate corner response: 5 or 10 currently possible -->
+  <ResponseRadius>5</ResponseRadius>
+  <!-- Threshold parameter for response strength corners-->
+  <ResponseThreshold>400</ResponseThreshold>
+   <!-- Threshold parameter for detecting white in image-->
+  <minThreshold>90</minThreshold>
+   <!-- Threshold parameter for detecting black in image-->
+  <maxThreshold>95</maxThreshold>
+   <!-- Minimum u-coordinate of reconstructed image area-->
+  <min_u>1300</min_u>
+   <!-- Maximum u-coordinate of reconstructed image area-->
+  <max_u>1550</max_u>
+   <!-- Minimum u-coordinate of reconstructed image area-->
+  <min_v>100</min_v>
+   <!-- Maximum u-coordinate of reconstructed image area-->
+  <max_v>300</max_v>
+  
+
+</Settings>
+</opencv_storage>
