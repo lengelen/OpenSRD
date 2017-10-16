@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<Settings>
+  <!-- Number of INNER corners per a item row and column. (square, circle) -->
+  <BoardSize_Width> 7</BoardSize_Width>
+  <BoardSize_Height>17</BoardSize_Height>
+  
+  <!-- The size of a square in some user defined metric system (pixel, millimeter)-->
+  <Square_Size>9.75</Square_Size>
+  
+  <!-- The number of frames used to perform calibration <= amunt of images in InputDirectory-->
+  <nframes>20</nframes>
+  
+  <!-- Whether to show calibration images -->
+  <Showcalib>1</Showcalib>
+
+  <!-- Whether to adapt calibration images -->
+  <adaptImage>0</adaptImage>  
+   
+  <!-- The name of the output file. -->
+  <Write_outputFileName>"Calib_CAM1.yml"</Write_outputFileName>
+  
+  <!-- If true (non-zero) we write to the output file the reprojection errors per view-->
+  <writePerview>1</writePerview>
+  
+  <!-- If true (non-zero) we show after calibration the undistorted images.-->
+  <Show_UndistortedImage>1</Show_UndistortedImage>
+  
+  <!-- The name of the input directory of Calibration Images-->
+  <InputDirectory>"CALIB/Cam1"</InputDirectory>
+ 
+
+</Settings>
+</opencv_storage>
