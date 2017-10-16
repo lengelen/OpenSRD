@@ -6,109 +6,101 @@
   <NumberOfCameras>1</NumberOfCameras>
   <!-- Type of reference input for camera pose estimation: image->true:1, file->false:0-->
   <TypeCameraPose>1</TypeCameraPose>
-  <!-- Type of input for feature positions: images->true:1, file->false:0-->
-  <TypeFeatureInput>1</TypeFeatureInput>
   <!-- Amount of threads used-->
-  <ThreadAmount>2</ThreadAmount>
+  <ThreadAmount>1</ThreadAmount>
   
   <!-- Save camera pose estimation in text file-->
-  <SaveCameraPose>1</SaveCameraPose>
-  <!-- Save feature coordinates in text file-->
-  <SaveFeatureCoordinates>1</SaveFeatureCoordinates>
+  <SaveCameraPose>0</SaveCameraPose>
   <!-- Show image with found corners-->
   <ShowCorners>0</ShowCorners>
-  <!-- Save average residual error in text file-->
-  <SaveResiduals>1</SaveResiduals>
 
   <!-- Name of the input directory of camera 1-->
-  <InputDirectory1>"DATA/CAM_1"</InputDirectory1>
+  <InputDirectory1>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M8/Cam2/ProcA3"</InputDirectory1>
   <!-- Name of the input directory of camera 2-->
-  <InputDirectory2>"DATA/CAM_2"</InputDirectory2>
+  <InputDirectory2>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M9/Cam1/MED_per2"</InputDirectory2>
   <!-- Name of the input directory of camera 3-->
   <InputDirectory3>"DATA/CAM_3"</InputDirectory3>
-  <!-- Fixed location of points f for camera 1-->
-  <InputFeatures1>"FeaturesF_1.txt"</InputFeatures1>
-  <!-- Fixed location of points f for camera 2-->
-  <InputFeatures2>"FeaturesF_2.txt"</InputFeatures2>
-  <!-- Fixed location of points f for camera 3-->
-  <InputFeatures3>"FeaturesF_3.txt"</InputFeatures3>
   <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 1-->
-  <InputInitial1>"VerticesPoseEstimation_1.txt"</InputInitial1>
-  <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 2-->
-  <InputInitial2>"VerticesPoseEstimation_2.txt"</InputInitial2>
+  <InputInitial1>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/VerticesPoseEstimation2.txt"</InputInitial1>
+   <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 2-->
+  <InputInitial2>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/VerticesPoseEstimation1.txt"</InputInitial2>
   <!-- Location of checkerboard vertices w.r.t. to world coordinate system during camera pose estimation of camera 3-->
   <InputInitial3>"VerticesPoseEstimation_3.txt"</InputInitial3>
   <!-- Name of the reference image/file - camera 1-->
-  <InputReference1>"REF1.png"</InputReference1>
+  <InputReference1>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/Cam2/Processed/processed2.png"</InputReference1>
   <!-- Name of the reference image - camera 2-->
-  <InputReference2>"REF2.png"</InputReference2>
+  <InputReference2>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/Cam1/Processed/processed2.png"</InputReference2>
   <!-- Name of the reference image - camera 3-->
   <InputReference3>"REF3.png"</InputReference3>
   
-  <!-- Name of the calibration file of the camera 1-->
-  <CalibrationFile1>"Calib_C1.yml"</CalibrationFile1>
-  <!-- Name of the calibration file of the camera 2-->
-  <CalibrationFile2>"Calib_C2.yml"</CalibrationFile2>
-  <!-- Name of the calibration file of the camera 3-->
+  <!-- Name of the calibration file of camera 1-->
+  <CalibrationFile1>"/home/lengelen/Documents/Doctoraat/Calib/Calib_20170508-2.yml"</CalibrationFile1>
+  <!-- Name of the calibration file of camera 2-->
+  <CalibrationFile2>"/home/lengelen/Documents/Doctoraat/Calib/Calib_20170508-1.yml"</CalibrationFile2>
+  <!-- Name of the calibration file of camera 3-->
   <CalibrationFile3>"Calib_C3.yml"</CalibrationFile3>
   
   <!-- Name of ouput file for saving camera pose estimation camera 1-->
-  <OutputCameraPose1>"Camera_Pose_1.txt"</OutputCameraPose1>
+  <OutputCameraPose1>"/home/lengelen/Documents/Doctoraat/Measurements/20170412/M14/Cam2/Camera_Pose_1.txt"</OutputCameraPose1>
   <!-- Name of ouput file for saving camera pose estimation camera 2-->
   <OutputCameraPose2>"Camera_Pose_2.txt"</OutputCameraPose2>
   <!-- Name of ouput file for saving camera pose estimation camera 3-->
   <OutputCameraPose3>"Camera_Pose_3.txt"</OutputCameraPose3>
-  <!-- Name of ouput directory for saving feature coordinates camera 1-->
-  <OutputDirectory1>"FEATURES_1"</OutputDirectory1>
-  <!-- Name of ouput directory for saving feature coordinates camera 2-->
-  <OutputDirectory2>"FEATURES_2"</OutputDirectory2>
-  <!-- Name of ouput directory for saving feature coordinates camera 3-->
-  <OutputDirectory3>"FEATURES_3"</OutputDirectory3>
   <!-- Name of ouput file for optimized coefficients according to chosen surface model-->
-  <OutputFileName>"Coefficients.txt"</OutputFileName>
-  <!-- Name of ouput file for average residual error per frame-->
-  <OutputFileNameResiudals>"Errors.txt"</OutputFileNameResiudals>
-    
+  <OutputFileName>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M8/Cam2/ProcA3_1.txt"</OutputFileName>
+   <!-- Name of ouput file for center location processed area per frame-->
+  <OutputFileCenters>"/home/lengelen/Documents/Doctoraat/Measurements/Ms_20170607/June7-4/Cam1/CentersA2_per10_flatstep5_longnolim.txt"</OutputFileCenters>
+ 
   
-  <!-- Number of rows and columns of feature pattern -->
-  <FeaturePatternSize_Width>5</FeaturePatternSize_Width>
-  <FeaturePatternSize_Height>17</FeaturePatternSize_Height>
   <!-- Length scale in x-direction (lateral direction)(mm)-->
-  <Lx>40</Lx>
+  <Lx>100</Lx>
   <!-- Length scale in y-direction (streamwise direction)(mm)-->
-  <Ly>160</Ly>
+  <Ly>100</Ly>
   <!-- Number of rows and columns of reference pattern -->
-  <RefPatternSize_Width>5</RefPatternSize_Width>
-  <RefPatternSize_Height>17</RefPatternSize_Height>
+  <RefPatternSize_Width>10</RefPatternSize_Width>
+  <RefPatternSize_Height>39</RefPatternSize_Height>
+  <!-- Width/length of checquerboard squares-->
+  <gridSize>10</gridSize>
+  
 
 
   <!-- Numerical differentation step for calculation of gradient-->
-  <DiffStep>0.01</DiffStep>
+  <DiffStep>5</DiffStep>
   <!-- Function-value based stopping condition-->
   <Epsf>0</Epsf>
   <!-- Gradient based stopping condition-->
-  <Epsg>0.000001</Epsg>
+  <Epsg>0.000000001</Epsg>
   <!-- Step size-based stopping condition-->
   <Epsx>0</Epsx>
-  <!-- Error metric used: 1->normal collinearity metric, 2->disparity difference metric -->
-  <ErrorMetric>2</ErrorMetric>
-  <!-- Initial guess to start optimization in each thread-->
-  <InitialGuess>"[70.0,0.000,0.000,0.000,0.000]"</InitialGuess>
+   <!-- Initial guess to start optimization in each thread-->
+  <InitialGuess>"[77.00,-3.5000]"</InitialGuess>
   <!-- Maximum distance between located and predicted feature point -->
   <MatchesThreshold>10</MatchesThreshold>
   <!-- Maximum number of iterations during optimization-->
   <MaxIts>0</MaxIts>
   <!-- Minimum distance in pixels between corner points-->
-  <MinDistance>15</MinDistance>
+  <MinDistance>18</MinDistance>
   <!-- Scaling of coefficients for optimization (length=SurfaceModelParameters)-->
   <Scaling>"[1.0,10.000,10.000,10.000,10.000]"</Scaling>
   <!-- Number of parameters used in the surface model-->
-  <SurfaceModelParameters>5</SurfaceModelParameters>
+  <SurfaceModelParameters>3</SurfaceModelParameters>
   <!-- Radius to calculate corner response: 5 or 10 currently possible -->
   <ResponseRadius>5</ResponseRadius>
   <!-- Threshold parameter for response strength corners-->
-  <ResponseThreshold>350</ResponseThreshold>
-
+  <ResponseThreshold>400</ResponseThreshold>
+   <!-- Threshold parameter for detecting white in image-->
+  <minThreshold>90</minThreshold>
+   <!-- Threshold parameter for detecting black in image-->
+  <maxThreshold>95</maxThreshold>
+   <!-- Minimum u-coordinate of reconstructed image area-->
+  <min_u>1300</min_u>
+   <!-- Maximum u-coordinate of reconstructed image area-->
+  <max_u>1550</max_u>
+   <!-- Minimum u-coordinate of reconstructed image area-->
+  <min_v>100</min_v>
+   <!-- Maximum u-coordinate of reconstructed image area-->
+  <max_v>300</max_v>
   
+
 </Settings>
 </opencv_storage>
