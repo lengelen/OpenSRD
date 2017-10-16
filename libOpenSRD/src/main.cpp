@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /// Inlcude header files and external source files
+
 #include "main.h"
 #include <iterator>     // std::istream_iterator
 
@@ -111,7 +112,7 @@ template <class Type> class Ray
             }
 };
 template <class Type> class Normals_constant
-{  // Computes normalized n2 of set of 1 coefficients at position of surface point (3D Float)
+{  // Computes normalized n* of set of 1 coefficients at position of surface point (3D Float)
         private:
             real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
         public:
@@ -126,11 +127,12 @@ template <class Type> class Normals_constant
             Type operator ( ) ( Point3f& elem ) const
             {
 
-            	return Point3f(0, 0, 1);
+            	Point3f n =Point3f(-0.16, 0.07, 1);
+            	 return n/norm(n);
             }
         };
 template <class Type> class Normals_linear
-{  // Computes normalized n2 of set of 3 coefficients at position of surface point (3D Float)
+{  // Computes normalized n* of set of 3 coefficients at position of surface point (3D Float)
         private:
             real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
         public:
@@ -150,7 +152,7 @@ template <class Type> class Normals_linear
             }
         };
 template <class Type> class Normals_1storder
-{  // Computes normalized n2 of set of 8 coefficients at position of surface point (3D Float)
+{  // Computes normalized n* of set of 8 coefficients at position of surface point (3D Float)
         private:
             real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
         public:
@@ -171,7 +173,7 @@ template <class Type> class Normals_1storder
             }
         };
 template <class Type> class Normals_2ndorder
-{  // Computes normalized n2 of set of 8 coefficients at position of surface point (3D Float)
+{  // Computes normalized n* of set of 8 coefficients at position of surface point (3D Float)
         private:
             real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
         public:
@@ -192,14 +194,14 @@ template <class Type> class Normals_2ndorder
             }
         };
 template <class Type> class Normals_3rdorder
-{  // Computes normalized n2 of set of 12 coefficients at position of surface point (3D Float)
+{  // Computes normalized n* of set of 12 coefficients at position of surface point (3D Float)
         private:
             real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
         public:
             // Constructor
             Normals_3rdorder (real_1d_array i_coef, double i_Lx, double i_Ly) {
                 coef=i_coef;
-                Lx=i_Lx;
+                Lx=i_Ly;
                 Ly=i_Ly;
             }
 
@@ -207,10 +209,34 @@ template <class Type> class Normals_3rdorder
             Type operator ( ) ( Point3f& elem ) const
             {
 
+
                Point3f n= Point3f(3*PI_F/Lx*coef[8]*sin(3*PI_F*elem.x/Lx)+2*PI_F/Lx*coef[5]*sin(2*PI_F*elem.x/Lx)+2*PI_F/Lx*coef[10]*sin(2*PI_F*elem.x/Lx)*cos(PI_F*elem.y/Ly)+PI_F/Lx*coef[7]*sin(PI_F*elem.x/Lx)*cos(PI_F*elem.y/Ly)+PI_F/Lx*coef[3]*sin(PI_F*elem.x/Lx)-coef[1]/Lx, 3*PI_F/Ly*coef[9]*sin(3*PI_F*elem.y/Ly)+2*PI_F/Ly*coef[6]*sin(2*PI_F*elem.y/Ly)+PI_F/Ly*coef[7]*cos(PI_F*elem.x/Lx)*sin(PI_F*elem.y/Ly)+2*coef[11]*cos(PI_F*elem.x/Lx)*sin(2*PI_F*elem.y/Ly)+PI_F/Ly*coef[4]*sin(PI_F*elem.y/Ly)-coef[2]/Ly, 1);
                return n/norm(n);
 
             }
+        };
+template <class Type> class Normals_Paper
+{  // Computes normalized n* of set of 2 coefficients at position of surface point (3D Float), as used in Paper
+private:
+         real_1d_array coef; double Lx; double Ly;   // Characterization of surface model
+     public:
+         // Constructor
+         Normals_Paper (real_1d_array i_coef, double i_Lx, double i_Ly) {
+             coef=i_coef;
+             Lx=i_Lx;
+             Ly=i_Ly;
+         }
+
+         // The function call
+         Type operator ( ) ( Point3f& elem ) const
+         {
+        	 // Scaled x-component with 100 because this improved performance of optimization algorithm: changes are same order as changes in water depth
+        	 // Fixed y-component, calculated based on average image with linear model
+        	 Point3f n= Point3f(-coef[1]/100,0.07, 1);
+
+            return n/norm(n);
+
+         }
         };
 template <class Type> class Angle
 { // Computes theta_i for given theta_delta and rw
@@ -316,15 +342,16 @@ template <class Type> class waterSurface_linear
 { // Finds surface point for set of 3 coefficients and ray u=cq' (all 3D Float)
 
 	private:
-	real_1d_array coef; Point3f c;  double Lx; double Ly; // Characterization of surface model
+	real_1d_array coef; Point3f c;  double Lx; double Ly; Point2f Middle;// Characterization of surface model
 
 	public:
 		// Constructor
-	waterSurface_linear (Point3f i_c, double i_Lx, double i_Ly, real_1d_array i_coef) {
+	waterSurface_linear (Point3f i_c, double i_Lx, double i_Ly, Point2f i_Middle, real_1d_array i_coef) {
 			coef=i_coef;
 			c=i_c;
 			Lx=i_Lx;
 			Ly=i_Ly;
+			Middle=i_Middle;
 		}
 
 		// The function call
@@ -345,13 +372,13 @@ template <class Type> class waterSurface_linear
 			fvec = new double[n];
 			wa = new double[lwa];
 			x = new double[n];
-			parameters = new double [11];
+			parameters = new double [13];
 
 			// Initial guess
-			x[0] = 1500;
+			x[0] = 500;
 			x[1] = 0;
 			x[2] = 0;
-			x[3] = 0;
+			x[3] = 60;
 
 			// Additional input information passed by pointer
 			parameters[0] = c.x;
@@ -362,9 +389,11 @@ template <class Type> class waterSurface_linear
 			parameters[5] = ray.z;
 			parameters[6] = Lx;
 			parameters[7] = Ly;
-			parameters[8] = coef[0];
-			parameters[9] = coef[1];
-			parameters[10] = coef[2];
+			parameters[8] = Middle.x;
+			parameters[9] = Middle.y;
+			parameters[10] = coef[0];
+			parameters[11] = coef[1];
+			parameters[12] = coef[2];
 
 			// Initialization
 			findIntersection_linear( n, x, fvec, &iflag, parameters );
@@ -379,7 +408,6 @@ template <class Type> class waterSurface_linear
 			return result;
 			}
 	};
-
 template <class Type> class waterSurface_1storder
 { // Finds surface point for set of 8 coefficients and ray u=cq' (all 3D Float)
 
@@ -597,6 +625,74 @@ template <class Type> class waterSurface_3rdorder
 			return result;
 			}
 	};
+template <class Type> class waterSurface_Paper
+{ // Finds surface point for set of 2 coefficients and ray u=cq' (all 3D Float), as used in Paper
+
+private:
+	real_1d_array coef; Point3f c;  double Lx; double Ly; Point2f Middle;// Characterization of surface model
+
+	public:
+		// Constructor
+	waterSurface_Paper (Point3f i_c, double i_Lx, double i_Ly, Point2f i_Middle, real_1d_array i_coef) {
+			coef=i_coef;
+			c=i_c;
+			Lx=i_Lx;
+			Ly=i_Ly;
+			Middle=i_Middle;
+		}
+
+		// The function call
+		Type operator ( ) ( Point3f& ray ) const
+		{
+			// Parameters/variables used by Hybrid to solve non-linear problem
+			double *fvec;
+			int iflag=1;
+			int lwa;
+			int n = 4;
+			double tol = 0.000001;
+			double *wa;
+			double *x;
+			double *parameters;
+
+			lwa = ( n * ( 3 * n + 13 ) ) / 2;
+
+			fvec = new double[n];
+			wa = new double[lwa];
+			x = new double[n];
+			parameters = new double [12];
+
+			// Initial guess
+			x[0] = 1000;
+			x[1] = 0;
+			x[2] = 0;
+			x[3] = 0;
+
+			parameters[0] = c.x;
+			parameters[1] = c.y;
+			parameters[2] = c.z;
+			parameters[3] = ray.x;
+			parameters[4] = ray.y;
+			parameters[5] = ray.z;
+			parameters[6] = Lx;
+			parameters[7] = Ly;
+			parameters[8] = Middle.x;
+			parameters[9] = Middle.y;
+			parameters[10] = coef[0];
+			parameters[11] = coef[1];
+
+			// Initialization
+			findIntersection_Paper( n, x, fvec, &iflag, parameters );
+
+			// Optimization
+			int info = hybrd1 ( findIntersection_Paper, n, x, fvec, parameters, tol, wa, lwa );
+			Point3f result =Point3f(x[1],x[2],x[3]);
+			delete[] fvec;
+			delete[] wa;
+			delete[] x;
+			delete[] parameters;
+			return result;
+			}
+	};
 template <class T> struct prod
 { // Computes angle between two vectors by dot product (used to compute theta_d)
     T operator() (Point3f& uu, Point3f& vv) const {
@@ -607,7 +703,7 @@ template <class T> struct prod
         typedef T second_argument_type;
         typedef T result_type;
     };
-template <class T> struct prod2
+template <class T> struct prod_reverse
 {// Computes angle between two vectors by dot product but reverses one vector in direction (used for u and n (thetai))
     T operator() (Point3f& u, Point3f& n) const {
 
@@ -622,7 +718,7 @@ template <class T> struct error_col
 { // Computes normal collinearity metric based on two (normalized) normal directions
     T operator() (Point3f& n1, Point3f& n2) const
     {
-    	return 1000*acos(n1.ddot(n2));
+    	return 980*acos(n1.ddot(n2));
     }
         typedef T first_argument_type;
         typedef T second_argument_type;
@@ -767,39 +863,73 @@ template <class T> struct AbsoluteAngle
 inline int nancheck(double x) { return x != x; } //check if nan - double version
 inline int nancheck2(float x) { return x != x; } //check if nan - float version
 
+struct minX
+{ ///sort image points according to increasing u
+ bool operator() ( Point3f a, Point3f b ){
+               return a.x <= b.x;
+    }
+} sortingminX;
+struct maxX
+{ ///sort image points according to increasing u
+bool operator() ( Point3f a, Point3f b ){
+              return b.x <= a.x;
+   }
+} sortingmaxX;
+struct minY
+{ ///sort image points according to increasing u
+bool operator() ( Point3f a, Point3f b ){
+              return a.y <= b.y;
+   }
+} sortingminY;
+struct maxY
+{ ///sort image points according to increasing u
+bool operator() ( Point3f a, Point3f b ){
+              return b.y <= a.y;
+   }
+} sortingmaxY;
+void createFeatureFile(){ // Creates text file with theoretical location of reference pattern
+	ofstream fout("/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/VerticesPoseEstimation2-2.txt");
+	 if(!fout)
+				    {
+				        cout<<"File Not Opened"<<endl;  return;
+				    }
+
+	 for(int j=0;j<10;j++)
+		 for(int i=0;i<39;i++){
+
+    		fout << 390-i*10<<"\t"<<10+j*10<<"\t"<<0<<endl;
+
+
+		}
+	fout.close();
+}
 
 CameraParams Initialize(Settings s, int camera)
 { // Initialization of camera parameters in a CameraParams-object for input of settings and camera number
 
 	// Initialization and reading of all settings
 	Mat cameraMatrix, distCoeffs;
-	string in="INPUT/";
-	string CalibrationFile,  InputReference, OutputFile, CameraPoseFile, FeaturesFile;
+	string CalibrationFile,  InputReference, OutputFile, CameraPoseFile;
 	Mat R, origin, RR, rvec, tvec;
-	int Position;
 	Point3f c;
 	switch(camera){ // Open calibration file and reference image depending on camera
 		case 1:
-			 CalibrationFile= in+s.CalibrationFile1;
-			 InputReference= in+s.InputReference1;
-			 CameraPoseFile= in+s.InputInitial1;
+			 CalibrationFile= s.CalibrationFile1;
+			 InputReference= s.InputReference1;
+			 CameraPoseFile= s.InputInitial1;
 			 OutputFile=s.OutputCameraPose1;
-			 FeaturesFile=in+s.InputFeatures1;
 			 break;
 		case 2:
-			 CalibrationFile= in+s.CalibrationFile2;
-			 InputReference= in+s.InputReference2;
-			 CameraPoseFile= in+s.InputInitial2;
+			 CalibrationFile= s.CalibrationFile2;
+			 InputReference= s.InputReference2;
+			 CameraPoseFile= s.InputInitial2;
 			 OutputFile=s.OutputCameraPose2;
-			 FeaturesFile=in+s.InputFeatures2;
-
 			 break;
 		case 3:
-			 CalibrationFile=in+s.CalibrationFile3;
-			 InputReference= in+s.InputReference3;
-			 CameraPoseFile= in+s.InputInitial3;
+			 CalibrationFile=s.CalibrationFile3;
+			 InputReference= s.InputReference3;
+			 CameraPoseFile= s.InputInitial3;
 			 OutputFile=s.OutputCameraPose3;
-			 FeaturesFile=in+s.InputFeatures3;
 			 break;
 	}
 
@@ -825,10 +955,10 @@ CameraParams Initialize(Settings s, int camera)
 	 if(!s.TypeCameraPose){ // Camera pose estimation aleady done, read in external parameters from file
 			FileStorage fs3(InputReference,FileStorage::READ);
 			 if (!fs3.isOpened())
-							{
-								cout << "Could not open the Reference file: \"" << InputReference << "\"" << endl;
+				{
+					cout << "Could not open the Reference file: \"" << InputReference << "\"" << endl;
 
-							}
+				}
 			 cout <<"Calibration file loaded: "<<InputReference <<endl;
 			 fs3["Rotationmatrix"] >> R;
 			 fs3["TranslationVector"] >> tvec;
@@ -844,7 +974,7 @@ CameraParams Initialize(Settings s, int camera)
 			else exit(1);
 
 			// Detect corner points in image but don't undistort them
-			vector<Point2f> sortedcorners =create_points(image, ResponseThreshold, MinDistance, s.ResponseRadius, board_sz, cameraMatrix, distCoeffs, s.ShowCorners);
+			vector<Point2f> sortedcorners =create_points_OpenCV(image, ResponseThreshold, MinDistance, s.ResponseRadius, board_sz, cameraMatrix, distCoeffs, s.ShowCorners);
 
 			// Read theoretical 3D world coordinates
 			ifstream input(CameraPoseFile);
@@ -878,25 +1008,12 @@ CameraParams Initialize(Settings s, int camera)
 
 		 }
 
-	 	// Read fixed locations of feature points f on feature plane F
-		ifstream input(FeaturesFile);
-		while(input.fail())
-		{
-			cout<< "File for initial location of f incorrect" << endl;
-			exit(1); ;
-		}
-		vector<Point3f> f;
-		Point3f tmp;
-		while (input >> tmp.x && input >> tmp.y && input >> tmp.z)
-		{
-			f.push_back(tmp);
-		};
 		if(s.SaveCameraPose){ // Save result camera pose estimation if needed
 
-		saveCameraParams(OutputFile,in, R, tvec);
+		saveCameraParams(OutputFile,"", R, tvec);
 
 		}
-		CameraParams cam=CameraParams(R, tvec, cameraMatrix, c, distCoeffs, f);
+		CameraParams cam=CameraParams(R, tvec, cameraMatrix, c, distCoeffs);
         return cam;
 }
 
@@ -920,7 +1037,7 @@ void findIntersection_constant( int n, double x[], double fvec[], int *iflag, do
     return;
 }
 void findIntersection_linear( int n, double x[], double fvec[], int *iflag, double params[] )
-{ // Find intersection of ray cq' with surface model characterized by 3 coefficients
+{ // Find intersection of ray cq' with surface model characterized by 3 coefficients and centre of reconstructed area
     double cx = params[0];
     double cy = params[1];
     double cz = params[2];
@@ -929,17 +1046,18 @@ void findIntersection_linear( int n, double x[], double fvec[], int *iflag, doub
     double rz = params[5];
     double Lx = params[6];
     double Ly = params[7];
-    double A00 = params[8];
-    double B = params[9];
-    double C = params[10];
+    double centerx = params[8];
+    double centery = params[9];
+    double A00 = params[10];
+    double B = params[11];
+    double C = params[12];
 
     fvec[0] = cx+ x[0] * rx -x[1];
     fvec[1] = cy + x[0] * ry -x[2];
     fvec[2] = cz + x[0] * rz -x[3];
-    fvec[3] = -x[3] + A00 +B*x[1]/Lx+C*x[2]/Ly;
+    fvec[3] = -x[3] + + A00 +B*(x[1]-centerx)/Lx+C*(x[2]-centery)/Ly;
     return;
 }
-
 void findIntersection_1storder( int n, double x[], double fvec[], int *iflag, double params[] )
 { // Find intersection of ray cq' with surface model characterized by 5 coefficients
     double cx = params[0];
@@ -996,8 +1114,8 @@ void findIntersection_3rdorder( int n, double x[], double fvec[], int *iflag, do
     double rx = params[3];
     double ry = params[4];
     double rz = params[5];
-    double Lx = params[6];
-    double Ly = params[7];
+    double Lx = 25;
+    double Ly = 25;
     double A00 = params[8];
     double B = params[9];
     double C = params[10];
@@ -1014,419 +1132,448 @@ void findIntersection_3rdorder( int n, double x[], double fvec[], int *iflag, do
     fvec[0] = cx+ x[0] * rx -x[1];
     fvec[1] = cy + x[0] * ry -x[2];
     fvec[2] = cz + x[0] * rz -x[3];
-    fvec[3] = -x[3] + A00 + A10 * cos(PI*x[1]/Lx)+A01*cos(PI*x[2]/Ly)+B*x[1]/Lx+C*x[2]/Ly + A20 * cos(2*PI*x[1]/Lx)+ A02 * cos(2*PI*x[2]/Ly) + A11 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly)+ A30 * cos(3*PI*x[1]/Lx)+ A03 * cos(3*PI*x[2]/Ly) + A21 * cos(PI*x[1]/Lx*2) * cos(PI*x[2]/Ly)+ A12 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly*2);
+    fvec[3] = -x[3] + A00 + A10 * cos(PI*x[1]/Lx)+A01*cos(PI*x[2]/Ly)+B*(x[1]-270)/Lx+C*(x[2]-355)/Ly + A20 * cos(2*PI*x[1]/Lx)+ A02 * cos(2*PI*x[2]/Ly) + A11 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly)+ A30 * cos(3*PI*x[1]/Lx)+ A03 * cos(3*PI*x[2]/Ly) + A21 * cos(PI*x[1]/Lx*2) * cos(PI*x[2]/Ly)+ A12 * cos(PI*x[1]/Lx) * cos(PI*x[2]/Ly*2);
     return;
 }
-//Optimization of coefficients
-vector<double> compute_error(float Lx, float Ly, int ErrorMetric, int ParameterAmount, CameraParams Camera, vector<Point3f> Pixels, vector<Point3f> f, real_1d_array Coeff)
-{ // Compute errors Ef for all feature points of one camera
+void findIntersection_Paper( int n, double x[], double fvec[], int *iflag, double params[] )
+{ // Find intersection of ray cq' with surface model characterized by 2 coefficients, as used in Paper
+	double cx = params[0];
+	double cy = params[1];
+	double cz = params[2];
+	double rx = params[3];
+	double ry = params[4];
+	double rz = params[5];
+	double Lx = params[6];
+	double Ly = params[7];
+	double centerx = params[8];
+	double centery = params[9];
+	double A00 = params[10];
+	double C = params[11];
 
 
-	//Initialize all temp vectors
-	vector<Point3f> qworld(Pixels.size());
-    vector<Point3f> water(Pixels.size());
-    vector<Point3f> normals1(Pixels.size());
-    vector<Point3f> u(Pixels.size());
-    vector<Point3f> v(Pixels.size());
-    vector<Point3f> v2(Pixels.size());
-    vector<Point3f> X(Pixels.size());
-    vector<Point3f> X2(Pixels.size());
-    vector<Point3f> normals2(Pixels.size());
-
-    vector<double> thetad(Pixels.size());
-    vector<double> E(Pixels.size());
-    vector<double> thetai(Pixels.size());
-    vector<double> thetai2(Pixels.size());
-    vector<double> thetad2(Pixels.size());
-    vector<double> thetar(Pixels.size());
-    vector<float> a(Pixels.size());
-
-    vector<Mat> Rotations(Pixels.size());
-    vector<Mat> Rotations2(Pixels.size());
-    vector<Point3f> features2(Pixels.size());
-    vector<Point3f> uu(Pixels.size());
-    vector<Point3f> vv(Pixels.size());
-    vector<Point3f> shift(Pixels.size());
-
-    // Compute inverse of camera matrices
-    Mat RR=Camera.R.inv();
-    Mat KK=Camera.K.inv();
-
-    // Compute world coordinates q'
-    transform(Pixels.begin(), Pixels.end(), qworld.begin(), worldCoords<Point3f> (RR, Camera.T, KK));
-    // Compute rays u=cq'
-    transform(qworld.begin(), qworld.end(), u.begin(), Ray<Point3f> (Camera.c));
-	switch(ParameterAmount){
-		case 1:
-			// Determine surface points according to surface model and hypothesized coefficients
-			transform(u.begin(), u.end(), water.begin(),  waterSurface_constant<Point3f> (Camera.c, Lx, Ly, Coeff));
-			// Compute normals n2 according to surface model and hypothesized coefficients
-			transform(water.begin(), water.end(), normals2.begin(), Normals_constant<Point3f> (Coeff, Lx,Ly));
-		break;
-		case 3:
-			// Determine surface points according to surface model and hypothesized coefficients
-			transform(u.begin(), u.end(), water.begin(),  waterSurface_linear<Point3f> (Camera.c, Lx, Ly, Coeff));
-			// Compute normals n2 according to surface model and hypothesized coefficients
-			transform(water.begin(), water.end(), normals2.begin(), Normals_linear<Point3f> (Coeff, Lx,Ly));
-		break;
-		case 5:
-			// Determine surface points according to surface model and hypothesized coefficients
-			transform(u.begin(), u.end(), water.begin(),  waterSurface_1storder<Point3f> (Camera.c, Lx, Ly, Coeff));
-			// Compute normals n2 according to surface model and hypothesized coefficients
-			transform(water.begin(), water.end(), normals2.begin(), Normals_1storder<Point3f> (Coeff, Lx,Ly));
-		break;
-		case 8:
-			// Determine surface points according to surface model and hypothesized coefficients
-			transform(u.begin(), u.end(), water.begin(),  waterSurface_2ndorder<Point3f> (Camera.c, Lx, Ly, Coeff));
-			// Compute normals n2 according to surface model and hypothesized coefficients
-			transform(water.begin(), water.end(), normals2.begin(), Normals_2ndorder<Point3f> (Coeff, Lx,Ly));
-		break;
-		case 12:
-			// Determine surface points according to surface model and hypothesized coefficients
-			transform(u.begin(), u.end(), water.begin(),  waterSurface_3rdorder<Point3f> (Camera.c, Lx, Ly, Coeff));
-			// Compute normals n2 according to surface model and hypothesized coefficients
-			transform(water.begin(), water.end(), normals2.begin(), Normals_3rdorder<Point3f> (Coeff, Lx,Ly));
-		break;
-	}
-    // Compute rays v=pf
-    transform (f.begin(), f.end(), water.begin(), v.begin(), SubtractNormalized<Point3f>());
-    // Compute thetad
-    transform (u.begin(), u.end(), v.begin(), thetad.begin(),prod<double>());
-    // Compute rotation axis
-    transform (u.begin(), u.end(), v.begin(), X.begin(),axis<Point3f> ());
-    // Compute thetai
-    transform(thetad.begin(), thetad.end(), thetai.begin(), Angle<double>(rw));
-    // Compute rotation matrix
-    transform (thetai.begin(), thetai.end(), X.begin(), Rotations.begin(), Rotationmatrix<Mat>());
-    // Rotate u with rotationmatrix
-    transform (Rotations.begin(), Rotations.end(), u.begin(), normals1.begin(), Rotationmin<Point3f>());
-    if(ErrorMetric==1) // Compute normal collinearity metric
-    transform (normals2.begin(), normals2.end(),normals1.begin(), E.begin(), error_col<double>());
-    else if(ErrorMetric==2){ // Compute disparity difference metric
-    // Compute angle between normals n2 and rays u
-    transform (u.begin(), u.end(), normals2.begin(), thetai2.begin(),prod2<double>());
-    // Compute second angle theta_delta2
-    transform(thetai2.begin(), thetai2.end(), thetad2.begin(), Angle2<double>(rw));
-    // Compute rotation axis
-    transform (normals2.begin(), normals2.end(), u.begin(), X2.begin(), axis<Point3f> ());
-    // Compute rotation matrix
-    transform (thetad2.begin(), thetad2.end(), X2.begin(), Rotations2.begin(), Rotationmatrix<Mat>());
-    // Rotate vector u to get v2
-    transform (Rotations2.begin(), Rotations2.end(), u.begin(), v2.begin(), Rotation<Point3f>());
-    // Calculate distance along v2 from surface point to z=0
-    transform (water.begin(), water.end(), v2.begin(), a.begin(), Distance<float>());
-    // Compute vector from p, along v with length a
-    transform (a.begin(), a.end(), v2.begin(), vv.begin(), Waterray<Point3f>());
-    // Compute intersections with plane z=0
-    transform (water.begin(), water.end(), vv.begin(), features2.begin(), std::plus<Point3f>());
-    // Compute disparity shift
-    transform (f.begin(), f.end(), features2.begin(), shift.begin(), Subtract<Point3f>());
-    // Compute norm of disparity shift
-    transform (shift.begin(), shift.end(),E.begin(), takeNorm<double>());
-   }
-     return E;
+	fvec[0] = cx+ x[0] * rx -x[1];
+	fvec[1] = cy + x[0] * ry -x[2];
+	fvec[2] = cz + x[0] * rz -x[3];
+	fvec[3] = -x[3] + A00;
+	return;
 }
-void combined_error3(const real_1d_array &x, real_1d_array &fi, void *ptr)
-{ // Compute errors of all cameras combined for set of 3 cameras
+template <class Type> class crossVerify
+{
+        private:
+         	float gridSize; uchar minThreshold; uchar maxThreshold;
+        public:
+            // Constructor
+         	crossVerify (float i_gridSize, uchar i_minThreshold,  uchar i_maxThreshold) {
 
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
+         		gridSize=i_gridSize;
+                minThreshold=i_minThreshold;
+                maxThreshold=i_maxThreshold;
+            }
 
-	//Errors Ef first camera
-	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
+            // The function call
+            Type operator ( ) ( Point3f& f, Point3f& pixel ) const
+            {
+            	if(fmod(floor(f.x/gridSize),2)==fmod(floor((f.y)/gridSize),2)){
+            		if(pixel.z<minThreshold){
+							return 1;}
+            		else return (0);}
+				else{
+						if(pixel.z>maxThreshold){
+							return 1;
+						}
+						else return 0;
+					}
+                	}
+};
+template <class Type> class crossVerify2
+{
+        private:
+         	float gridSize; uchar minThreshold; uchar maxThreshold;
+        public:
+            // Constructor
+         	crossVerify2 (float i_gridSize, uchar i_minThreshold,  uchar i_maxThreshold) {
 
-	for(size_t k=0; k<E1.size(); k++)
-		fi[k] = (nancheck(E1[k]) ? 0.0 : E1[k]) ; //if nan then no contribution to error-> not included in optimization
+         		gridSize=i_gridSize;
+                minThreshold=i_minThreshold;
+                maxThreshold=i_maxThreshold;
+            }
 
-	//Errors Ef second camera
-	vector<double> E2 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params, Frame.Cameras[1], Frame.Pixels[1], Frame.fs[1], x);
-	for(size_t k=0; k<E2.size(); k++){
-		    	fi[k+E1.size()] = (nancheck(E2[k]) ? 0 : E2[k]);
+            // The function call
+            Type operator ( ) ( Point3f& f, Point3f& pixel ) const
+            {
+            	if(fmod(floor(f.x/gridSize),2)==fmod(floor(f.y/gridSize),2)){
+            	            		if(pixel.z<minThreshold){
+            								return 0;}
+            	            		else return (1);}
+            					else{
+            							if(pixel.z>maxThreshold){
+            								return 0;
 
-		 }
-	//Errors Ef third camera
-	vector<double> E3 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params,Frame.Cameras[2], Frame.Pixels[2], Frame.fs[2], x);
-	for(size_t k=0; k<E3.size(); k++){
-		    fi[k+E1.size()+E2.size()] = (nancheck(E3[k]) ? 0 : E3[k]);
-		 }
+            							}
+            							else return 1;
+            						}
 
- }
-void combined_error2(const real_1d_array &x, real_1d_array &fi, void *ptr)
-{ /// Compute errors of all cameras combined for set of 2 cameras
+                    	}
+        };
+vector<uchar> errorfunction(bool flag, float Lx, float Ly, int gridSize, int ParameterAmount, CameraParams Camera, Mat Image, real_1d_array Coeff, Point2f Middle,  uchar i_minThreshold, uchar i_maxThreshold, int min_u, int max_u, int min_v, int max_v)
+{
+	vector<Point3f> temp;
+	vector<Point3f> grayScales;
 
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
+	for(int i=min_u; i<max_u;i++){
+			for(int j=min_v ;j<max_v;j++){
+			if(Image.at<uchar>(j,i)< i_minThreshold || Image.at<uchar>(j,i)> i_maxThreshold){
+				temp.push_back(Point3f(i,j,1));
+				grayScales.push_back(Point3f(i,j,Image.at<uchar>(j,i)));
+			}
+		}}
+	// Compute inverse of camera matrices
+	Mat RR=Camera.R.inv();
+	Mat KK=Camera.K.inv();
 
-	//Errors Ef first camera
-	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
+	// Initialize required vectors
+	vector<Point3f> qworld(temp.size());
+	vector<Point3f> rays(temp.size());
+	vector<Point3f> water(temp.size());
+	vector<Point3f> normals2(temp.size());
+	vector<Point3f> u(temp.size());
+	vector<Point3f> v(temp.size());
+	vector<double> thetai(temp.size());
+	vector<Point3f> X(temp.size());
+	vector<Mat> Rotations(temp.size());
+	vector<double> thetad(temp.size());
+	vector<float> a(temp.size());
+	vector<Point3f> vv(temp.size());
+	vector<Point3f> features(temp.size());
+	vector<uchar> errors(temp.size());
 
-	for(size_t k=0; k<E1.size(); k++)
-		fi[k] = (nancheck(E1[k]) ? 0.0 : E1[k]) ; //if nan then no contribution to error-> not included in optimization
+	// Compute world coordinates q'
+	transform(temp.begin(), temp.end(), qworld.begin(), worldCoords<Point3f> (RR, Camera.T, KK));
+	// Compute rays u=cq'
+	transform(qworld.begin(), qworld.end(), u.begin(), Ray<Point3f> (Camera.c));
 
-	//Errors Ef second camera
-	vector<double> E2 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params, Frame.Cameras[1], Frame.Pixels[1], Frame.fs[1], x);
-	for(size_t k=0; k<E2.size(); k++){
-		    	fi[k+E1.size()] = (nancheck(E2[k]) ? 0 : E2[k]);
-
-		 }
-
- }
-void combined_error1(const real_1d_array &x, real_1d_array &fi, void *ptr)
-{ /// Compute errors of single camera 
-
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
-	//Errors Ef first camera
-	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
-
-	for(size_t k=0; k<E1.size(); k++)
-		fi[k] = (nancheck(E1[k]) ? 0.0 : E1[k]) ; //if nan then no contribution to error-> not included in optimization
- }
-void combined_errorBF(const real_1d_array &x, double &func, void *ptr)
-{ /// Compute errors of single camera
-	func=0;
-	frameOptimizer Frame=*(static_cast<frameOptimizer*>(ptr)); // Get frameoptimizer from pointer
-	//Errors Ef first camera
-	vector<double> E1 =compute_error(Frame.Lx, Frame.Ly, Frame.ErrorMetric, Frame.Params, Frame.Cameras[0], Frame.Pixels[0], Frame.fs[0], x);
-
-	for(size_t k=0; k<E1.size(); k++)
-		func = (nancheck(E1[k]) ? 0.0 : func+E1[k]) ; //if nan then no contribution to error-> not included in optimization
- }
-
-real_1d_array optimizeCoef(real_1d_array Coeff, frameOptimizer Frame)
-{ // Finds optimal coefficients for frame
-  // Requires initial guess and frameOptimizer containing all necessary input
-
-
-		// Optimization configuration parameters
-		minlmstate state;
-	    minlmreport rep;
-	    void *ptr;
-	    ptr=&Frame;
-	    real_1d_array scale;
-		// Initialize optimization
-		minlmcreatev(Frame.NumberOfCameras*Frame.Pixels[0].size(), Coeff, Frame.DiffStep, state);
-		minlmsetcond(state, Frame.Epsg, Frame.Epsf, Frame.Epsx, Frame.MaxIts);
-
-		switch(Coeff.length()){
-
+	switch(Coeff.length()){
 			case 1:
-				scale="[1]";
-				break;
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_constant<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_constant<Point3f> (Coeff, Lx,Ly));
+			break;
 			case 3:
-				scale="[1,1,1]";
-				break;
-
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_linear<Point3f> (Camera.c, Lx, Ly, Middle, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_linear<Point3f> (Coeff, Lx,Ly));
+			break;
 			case 5:
-				scale="[1,1,1,1,1]";
-				break;
-
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_1storder<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_1storder<Point3f> (Coeff, Lx,Ly));
+			break;
 			case 8:
-				scale="[1,1,1,1,1,1,1,1]";
-				break;
-
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_2ndorder<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_2ndorder<Point3f> (Coeff, Lx,Ly));
+			break;
 			case 12:
-				scale="[1,1,1,1,1,1,1,1,1,1,1,1]";
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_3rdorder<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_3rdorder<Point3f> (Coeff, Lx,Ly));
+			break;
+			case 2:
+			// Determine surface points according to surface model and hypothesized coefficients
+			transform(u.begin(), u.end(), water.begin(),  waterSurface_Paper<Point3f> (Camera.c, Lx, Ly, Middle, Coeff));
+			// Compute normals n2 according to surface model and hypothesized coefficients
+			transform(water.begin(), water.end(), normals2.begin(), Normals_Paper<Point3f> (Coeff, Lx,Ly));
+	}
+
+	// Easy way to compute normalized rays u
+	transform (water.begin(), water.end(), qworld.begin(), u.begin(), SubtractNormalized<Point3f>());
+	// Compute angle between u and n2
+	transform (u.begin(), u.end(), normals2.begin(), thetai.begin(),prod_reverse<double>());
+	// Compute theta_d based on Snell's law
+	transform(thetai.begin(), thetai.end(), thetad.begin(), Angle2<double>(rw));
+	// Compute rotation axis
+	transform (normals2.begin(), normals2.end(), u.begin(), X.begin(),axis<Point3f> ());
+	// Compute rotation matrix
+	transform (thetad.begin(), thetad.end(), X.begin(), Rotations.begin(), Rotationmatrix<Mat>());
+	// Rotate u over theta_d to get v
+	transform (Rotations.begin(), Rotations.end(), u.begin(), v.begin(), Rotationmin<Point3f>());
+	// Find vertical distance between surface point and z=0
+	transform (water.begin(), water.end(), v.begin(), a.begin(), Distance<float>());
+	// Multiply v with this distance
+	transform (a.begin(), a.end(), v.begin(), vv.begin(), Waterray<Point3f>());
+	// Surface points p + scaled v's give us intersection on plane F: points f!
+	transform (water.begin(), water.end(), vv.begin(), features.begin(), std::plus<Point3f>());
+	transform (features.begin(), features.end(), grayScales.begin(),errors.begin(), crossVerify<uchar> (gridSize, i_minThreshold,  i_maxThreshold));
+
+	// transform (features.begin(), features.end(), grayScales.begin(),errors.begin(), crossVerify2<uchar> (gridSize, i_minThreshold,  i_maxThreshold));
+
+	//flag=true;
+	if(flag){
+
+		Mat error=Mat::zeros(Image.rows, Image.cols, CV_8U);
+		Mat projection=Mat::zeros(Image.rows, Image.cols, CV_8U);
+		for(int j=0;j<errors.size();j++){
+			if(errors[j]!=0) error.at<uchar>(temp[j].y,temp[j].x)=(uchar)errors[j];
+			else error.at<uchar>(temp[j].y,temp[j].x)=0;
+			if(features[j].x<0 ||features[j].y<0)projection.at<uchar>(temp[j].y,temp[j].x)=0;
+					else{
+		if(fmod(floor(features[j].x/gridSize),2)==fmod(floor((features[j].y)/gridSize),2)){
+					projection.at<uchar>(temp[j].y,temp[j].x)=255;}
+							else projection.at<uchar>(temp[j].y,temp[j].x)=100;
+		}}
+					  // Show our image inside it.
+		namedWindow( "Display image 2", WINDOW_NORMAL );// Create a window for display.
+		resizeWindow("Display image 2", 1000, 800);
+		imshow( "Display image 2", Image );                   // Show our image inside it.
+		namedWindow( "Display error 2", WINDOW_NORMAL );// Create a window for display.
+		resizeWindow("Display error 2", 1000, 800);
+		imshow( "Display error 2", error*5 );                   // Show our image inside it.
+		namedWindow( "Display projection", WINDOW_NORMAL );// Create a window for display.
+			resizeWindow("Display projection", 1000, 800);
+			imshow( "Display projection", projection );                   // Show our image inside it.
+
+		waitKey(0);             // Wait for a keystroke in the window
+
+	}
+
+	//double res=accumulate( errors.begin(), errors.end(), 0.0);
+	//cout<<res<<endl;
+	return errors;
+
+}
+Point2f computeMiddle(bool flag, float Lx, float Ly, int gridSize, int ParameterAmount, CameraParams Camera, Mat Image, real_1d_array Coeff, uchar i_minThreshold,  uchar i_maxThreshold, int min_u, int max_u, int min_v, int max_v)
+{ // Computes approximate middle of reconstructed area, used in paper during validation on still water
+
+	vector<Point3f> temp;
+	vector<Point3f> grayScales;
+	float minX=0;
+	float minY=0;
+	float maxX=0;
+	float maxY=0;
+	for(int i=min_u; i<max_u;i++){
+				for(int j=min_v ;j<max_v;j++){
+			if(Image.at<uchar>(j,i)< i_minThreshold || Image.at<uchar>(j,i)> i_maxThreshold){
+				temp.push_back(Point3f(i,j,1));
+				grayScales.push_back(Point3f(i,j,Image.at<uchar>(j,i)));
+			}
+		}}
+	// Compute inverse of camera matrices
+	Mat RR=Camera.R.inv();
+	Mat KK=Camera.K.inv();
+
+	// Initialize required vectors
+	vector<Point3f> qworld(temp.size());
+	vector<Point3f> rays(temp.size());
+	vector<Point3f> water(temp.size());
+	vector<Point3f> normals2(temp.size());
+	vector<Point3f> u(temp.size());
+	vector<Point3f> v(temp.size());
+	vector<double> thetai(temp.size());
+	vector<Point3f> X(temp.size());
+	vector<Mat> Rotations(temp.size());
+	vector<double> thetad(temp.size());
+	vector<float> a(temp.size());
+	vector<Point3f> vv(temp.size());
+	vector<Point3f> features(temp.size());
+	vector<uchar> errors(temp.size());
+
+	// Compute world coordinates q'
+	transform(temp.begin(), temp.end(), qworld.begin(), worldCoords<Point3f> (RR, Camera.T, KK));
+	// Compute rays u=cq'
+	transform(qworld.begin(), qworld.end(), u.begin(), Ray<Point3f> (Camera.c));
+
+	switch(Coeff.length()){
+			case 1:
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_constant<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_constant<Point3f> (Coeff, Lx,Ly));
+			break;
+			case 3:
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_linear<Point3f> (Camera.c, Lx, Ly, Point2f(0,0), Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_linear<Point3f> (Coeff, Lx,Ly));
+			break;
+			case 5:
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_1storder<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_1storder<Point3f> (Coeff, Lx,Ly));
+			break;
+			case 8:
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_2ndorder<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_2ndorder<Point3f> (Coeff, Lx,Ly));
+			break;
+			case 12:
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_3rdorder<Point3f> (Camera.c, Lx, Ly, Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_3rdorder<Point3f> (Coeff, Lx,Ly));
+			break;
+			case 2:
+				// Determine surface points according to surface model and hypothesized coefficients
+				transform(u.begin(), u.end(), water.begin(),  waterSurface_Paper<Point3f> (Camera.c, Lx, Ly, Point2f(0,0), Coeff));
+				// Compute normals n2 according to surface model and hypothesized coefficients
+				transform(water.begin(), water.end(), normals2.begin(), Normals_Paper<Point3f> (Coeff, Lx,Ly));
+
 		}
 
-		minlmsetscale(state, scale);
+	// Easy way to compute normalized rays u
+	transform (water.begin(), water.end(), qworld.begin(), u.begin(), SubtractNormalized<Point3f>());
+	// Compute angle between u and n2
+	transform (u.begin(), u.end(), normals2.begin(), thetai.begin(),prod_reverse<double>());
+	// Compute theta_d based on Snell's law
+	transform(thetai.begin(), thetai.end(), thetad.begin(), Angle2<double>(rw));
+	// Compute rotation axis
+	transform (normals2.begin(), normals2.end(), u.begin(), X.begin(),axis<Point3f> ());
+	// Compute rotation matrix
+	transform (thetad.begin(), thetad.end(), X.begin(), Rotations.begin(), Rotationmatrix<Mat>());
+	// Rotate u over theta_d to get v
+	transform (Rotations.begin(), Rotations.end(), u.begin(), v.begin(), Rotationmin<Point3f>());
+	// Find vertical distance between surface point and z=0
+	transform (water.begin(), water.end(), v.begin(), a.begin(), Distance<float>());
+	// Multiply v with this distance
+	transform (a.begin(), a.end(), v.begin(), vv.begin(), Waterray<Point3f>());
+	// Surface points p + scaled v's give us intersection on plane F: points f!
+	transform (water.begin(), water.end(), vv.begin(), features.begin(), std::plus<Point3f>());
+	transform (features.begin(), features.end(), grayScales.begin(),errors.begin(), crossVerify<uchar> (gridSize, i_minThreshold,  i_maxThreshold));
+	//transform (features.begin(), features.end(), grayScales.begin(),errors.begin(), crossVerify2<uchar> (gridSize, i_minThreshold,  i_maxThreshold));
 
 
+	if(flag){
 
-		switch(Frame.NumberOfCameras){ //Determine camera-amount and use appropriate function to compute errors
-			case 1:
-				alglib::minlmoptimize(state, combined_error1, NULL, ptr); //optimize
-				break;
-			case 2:
-				alglib::minlmoptimize(state, combined_error2, NULL, ptr); //optimize
-				break;
-			case 3:
-				alglib::minlmoptimize(state, combined_error3, NULL, ptr); //optimize
-				break;
-		default:
-			cout<<"Error: Impossible amount of camera's"<<endl;}
-	   minlmresults(state, Coeff, rep);
+		Mat error=Mat::zeros(Image.rows, Image.cols, CV_8U);
+		for(size_t j=0;j<errors.size();j++){
+			if(errors[j]==1) error.at<uchar>(temp[j].y,temp[j].x)=(uchar)errors[j]*4;
+			else error.at<uchar>(temp[j].y,temp[j].x)=1;
+		}
 
+					  // Show our image inside it.
+		namedWindow( "Display image 2", WINDOW_NORMAL );// Create a window for display.
+		resizeWindow("Display image 2", 2000, 1000);
+		imshow( "Display image 2", Image );                   // Show our image inside it.
+		namedWindow( "Display error 2", WINDOW_NORMAL );// Create a window for display.
+		resizeWindow("Display error 2", 2000, 1000);
+		imshow( "Display error 2", error*60 );                   // Show our image inside it.
 
-	   if(Frame.Params != (int) Coeff.length()){
-		   real_1d_array Coeff2;
-		    string str=Coeff.tostring(5);
-			string str2=str.substr(1,str.length()-2);
-
-			Coeff2.setlength(Frame.Params);
-			int pos=0;
-			int pos2=0;
-			int i;
-			 std::string::size_type sz;     // alias of size_t
-			for(i=0;i<Coeff.length()-1;i++)
-			{
-				pos2=str2.find(",",pos);
-				Coeff2[i]=std::stod (str2.substr(pos,pos2),&sz);
-				pos=pos2+1;
-			}
-
-			Coeff2[i]=std::stod (str2.substr(pos),&sz);
-			for(i=i+1;i<Coeff2.length();i++)
-				Coeff2[i]=0;
-			cout<<Coeff2.tostring(5)<<endl;
-
-
-		minlmcreatev(Frame.NumberOfCameras*Frame.Pixels[0].size(), Coeff2, Frame.DiffStep, state);
-		minlmsetcond(state, Frame.Epsg, Frame.Epsf, Frame.Epsx, Frame.MaxIts);
-
-		switch(Coeff2.length()){
-
-			case 1:
-				scale="[1]";
-				break;
-			case 3:
-				scale="[1,1,1]";
-				break;
-
-			case 5:
-				scale="[1,1,1,1,1]";
-				break;
-
-			case 8:
-				scale="[1,1,1,1,1,1,1,1]";
-				break;
-
-			case 12:
-				scale="[1,1,1,1,1,1,1,1,1,1,1,1]";
-				}
-
-		minlmsetscale(state, scale);
-
-
-
-		switch(Frame.NumberOfCameras){ //Determine camera-amount and use appropriate function to compute errors
-			case 1:
-				alglib::minlmoptimize(state, combined_error1, NULL, ptr); //optimize
-				break;
-			case 2:
-				alglib::minlmoptimize(state, combined_error2, NULL, ptr); //optimize
-				break;
-			case 3:
-				alglib::minlmoptimize(state, combined_error3, NULL, ptr); //optimize
-				break;
-			default:
-			cout<<"Error: Impossible amount of camera's"<<endl;}
-
-		minlmresults(state, Coeff2, rep);
-		cout<<Coeff2.tostring(5)<<endl;
-	    return Coeff2;}
-
-	   else{
-	   return Coeff;}
+		waitKey(0);             // Wait for a keystroke in the window
 
 	}
-real_1d_array optimizeCoef2(real_1d_array Coeff, frameOptimizer Frame)
-{ // Finds optimal coefficients for frame
-  // Requires initial guess and frameOptimizer containing all necessary input
 
-		// Optimization configuration parameters
-		minlbfgsstate state;
-	    minlbfgsreport rep;
-	    void *ptr;
-	    ptr=&Frame;
+	sort(water.begin(), water.end(), sortingminX); //sort all points on one row by increasing u
+	minX=water[0].x;
+	sort(water.begin(), water.end(), sortingminY); //sort all points on one row by increasing u
+	minY=water[0].y;
+	sort(water.begin(), water.end(), sortingmaxX); //sort all points on one row by increasing u
+	maxX=water[0].x;
+	sort(water.begin(), water.end(), sortingmaxY); //sort all points on one row by increasing u
+	maxY=water[0].y;
 
-	    real_1d_array scale="[100.0,1,1]";
-		// Initialize optimization
-	    minlbfgscreatef(3, Coeff, Frame.DiffStep, state);
-	    minlbfgssetcond(state, Frame.Epsg, Frame.Epsf, Frame.Epsx, Frame.MaxIts);
+	float midX=(minX+maxX)/2;
+	float midY=(minY+maxY)/2;
+	Point2f m=Point2f(midX,midY);
+	//cout<<m<<endl;
+	return m;
 
-		minlbfgssetscale(state, scale);
-		minlbfgssetprecscale( state);
-		alglib::minlbfgsoptimize(state, combined_errorBF, NULL, ptr);
-		minlbfgsresults(state, Coeff, rep);
+}
+void combinedErrorFunction(const real_1d_array &x, real_1d_array &fi, void *ptr)
+{
+	imageOptimizer Frame=*(static_cast<imageOptimizer*>(ptr)); // Get ImageOptimzer from pointer
+	vector<uchar> E1=errorfunction(false, Frame.Lx, Frame.Ly, Frame.gridSize, Frame.Params, Frame.Cameras[0], Frame.Images[0], x, Frame.centerPoint, Frame.minThreshold, Frame.maxThreshold, Frame.min_u, Frame.max_u, Frame.min_v, Frame.max_v);
+	vector<uchar> E2;
+	vector<uchar> E3;
+	for(size_t t=0;t<E1.size();t++)
+		fi[t]=E1[t];
+	if(Frame.NumberOfCameras>1){
+	E2=errorfunction(false, Frame.Lx, Frame.Ly, Frame.gridSize, Frame.Params, Frame.Cameras[1], Frame.Images[1], x, Frame.centerPoint, Frame.minThreshold, Frame.maxThreshold, Frame.min_u, Frame.max_u, Frame.min_v, Frame.max_v);
 
-	   cout<<Coeff.tostring(5).c_str()<<endl;
-	    return Coeff;
+	for(size_t t=E1.size();t<E1.size()+E2.size();t++)
+		fi[t]=E2[t-E1.size()];}
 
-	}
-/// Main function
+	if(Frame.NumberOfCameras>2){
+		E3=errorfunction(false, Frame.Lx, Frame.Ly, Frame.gridSize, Frame.Params, Frame.Cameras[2], Frame.Images[2], x, Frame.centerPoint, Frame.minThreshold, Frame.maxThreshold, Frame.min_u, Frame.max_u, Frame.min_v, Frame.max_v);
+
+		for(size_t t=E1.size()+E2.size();t<E1.size()+E2.size()+E3.size();t++)
+			fi[t]=E3[t-E1.size()-E2.size()];}
+
+}
 int main ( )
 { // Main function to reconstruct time-dependent water surface.
-
-
-	// Set chrono-time at begin
-	std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
+	//createFeatureFile();
+	//return 0;
 
 	//Read all settings
-	Settings s;
-	
-	string inputSettingsFile;
-	cout << "Give InputsettingsFile: " << flush; //Read which settingsfile has to be used
-	getline( cin, inputSettingsFile );  // gets everything the user ENTERs
-	FileStorage fs(inputSettingsFile, FileStorage::READ); // Read the settings
-	if (!fs.isOpened())
+	Settings set;
+	FileStorage fss("settings.xml", FileStorage::READ); // Read the settings
+	if (!fss.isOpened())
 		{
 			cout << "Could not open the configuration file: "<< endl;
 			exit(1);
 		 }
-	fs["Settings"] >> s;
-	fs.release();   // close Settings file
+	fss["Settings"] >> set;
+	fss.release();   // close Settings file
 	CameraParams cam1, cam2, cam3;
-	int max_threads = omp_get_max_threads();
-	string res="RESULTS/";
 
-	if(s.ThreadAmount>max_threads)
-	{
-		cout<<"Amount of threads unavailable"<<endl;
-		cout<<"Changed to maximum amount of threads: "<<max_threads<<endl;
-		s.ThreadAmount=max_threads;
-	}
-	omp_set_dynamic(0);
-	omp_set_num_threads(s.ThreadAmount);
-	vector<vector<vector<Corner> > > prevPixels(s.ThreadAmount);
+	// Reconstructed area currently same for every camera used
+	int min_u=set.min_u;
+	int max_u=set.max_u;
+	int min_v=set.min_v;
+	int max_v=set.max_v;
 
-	switch(s.NumberOfCameras){ // Choice of cameras and initialize each camera separately
 
-	case 1:
-		cam1=Initialize(s, 1);
-		break;
-	case 2:
-		cam1=Initialize(s, 1);
-		cam2=Initialize(s, 2);
-		break;
-	case 3:
-		cam1=Initialize(s, 1);
-		cam2=Initialize(s, 2);
-		cam3=Initialize(s, 3);
-		break;
-	default:
-		cout<<"Invalid amount of camera's"<<endl;
-		return 0;
-	}
+	switch(set.NumberOfCameras){ // Choice of cameras and initialize each camera separately
 
-	vector<vector<real_1d_array> >CoefficientsList(s.ThreadAmount); // Output list of coefficients
-	vector<vector <double>> ErrorList(s.ThreadAmount); // Output list of corresponding errors
+		case 1:
+			cam1=Initialize(set, 1);
+			break;
+		case 2:
+			cam1=Initialize(set, 1);
+			cam2=Initialize(set, 2);
+			break;
+		case 3:
+			cam1=Initialize(set, 1);
+			cam2=Initialize(set, 2);
+			cam3=Initialize(set, 3);
+			break;
+		default:
+			cout<<"Invalid amount of camera's"<<endl;
+			return 0;
+		}
+	vector<imageOptimizer> optimizers(set.ThreadAmount);
 
-	real_1d_array InitialCoeffs=s.InitialGuess.c_str();
-	vector<frameOptimizer> optimizers(s.ThreadAmount);
-
-	for(size_t i=0;i<s.ThreadAmount;i++){
+	for(size_t i=0;i<set.ThreadAmount;i++){
 	vector<CameraParams> cams;
-	switch(s.NumberOfCameras){ //Choice of cameras and initialize optimization with appropriate camera amount
+	switch(set.NumberOfCameras){ //Choice of cameras and initialize optimization with appropriate camera amount
 
-	case 1:
-		cams.push_back(cam1);
-		optimizers[i]=frameOptimizer(1, cams, s.ErrorMetric, s.SurfaceModelParameters, s.Lx, s.Ly, s.Scaling, s.Epsg, s.Epsf, s.Epsx, s.MaxIts, s.DiffStep);
-		break;
-	case 2:
-		cams.push_back(cam1);
-		cams.push_back(cam2);
-		optimizers[i]=frameOptimizer(2, cams, s.ErrorMetric, s.SurfaceModelParameters, s.Lx, s.Ly, s.Scaling, s.Epsg, s.Epsf, s.Epsx, s.MaxIts, s.DiffStep);
-		break;
-	case 3:
-		cams.push_back(cam1);
-		cams.push_back(cam2);
-		cams.push_back(cam3);
-		optimizers[i]=frameOptimizer(3, cams, s.ErrorMetric, s.SurfaceModelParameters, s.Lx, s.Ly, s.Scaling, s.Epsg, s.Epsf, s.Epsx, s.MaxIts, s.DiffStep);
-		break;
-	default:
-		cout<<"Invalid amount of camera's"<<endl;
-		return 0;
-	}
+		case 1:
+			cams.push_back(cam1);
+			optimizers[i]=imageOptimizer(1, cams, set.SurfaceModelParameters, set.Lx, set.Ly, set.minThreshold, set.maxThreshold, set.gridSize, set.Scaling, set.Epsg, set.Epsf, set.Epsx, set.MaxIts, set.DiffStep, min_u, max_u, min_v, max_v);
+			break;
+		case 2:
+			cams.push_back(cam1);
+			cams.push_back(cam2);
+			optimizers[i]=imageOptimizer(2, cams, set.SurfaceModelParameters, set.Lx, set.Ly, set.minThreshold, set.maxThreshold, set.gridSize, set.Scaling, set.Epsg, set.Epsf, set.Epsx, set.MaxIts, set.DiffStep, min_u, max_u, min_v, max_v);
+			break;
+		case 3:
+			cams.push_back(cam1);
+			cams.push_back(cam2);
+			cams.push_back(cam3);
+			optimizers[i]=imageOptimizer(3, cams, set.SurfaceModelParameters, set.Lx, set.Ly, set.minThreshold, set.maxThreshold, set.gridSize, set.Scaling, set.Epsg, set.Epsf, set.Epsx, set.MaxIts, set.DiffStep, min_u, max_u, min_v, max_v);
+			break;
+		default:
+			cout<<"Invalid amount of camera's"<<endl;
+			return 0;
+		}
 
-	}
+		}
 
 	size_t nimages;
 	string InputDirectory1, InputDirectory2, InputDirectory3;
@@ -1437,239 +1584,242 @@ int main ( )
 	bool check2=false;
 	bool check3=false;
 
-	switch(s.NumberOfCameras){ // Choice of cameras and read image-names in every directory (for each camera)
+	switch(set.NumberOfCameras){ // Choice of cameras and read image-names in every directory (for each camera)
 
-	case 1:
-		InputDirectory1=s.InputDirectory1;
-		check1=readStringList(imageList1, InputDirectory1); //read all image-names
-		check=check1;
-		break;
-	case 2:
-		InputDirectory1=s.InputDirectory1;
-		InputDirectory2=s.InputDirectory2;
-		check1=readStringList(imageList1, InputDirectory1); //read all image-names
-		check2=readStringList(imageList2, InputDirectory2); //read all image-names
-		check=check1 && check2;
-		break;
-	case 3:
-		InputDirectory1=s.InputDirectory1;
-		InputDirectory2=s.InputDirectory2;
-		InputDirectory3=s.InputDirectory3;
-		check1=readStringList(imageList1, InputDirectory1); //read all image-names
-		check2=readStringList(imageList2, InputDirectory2); //read all image-names
-		check3=readStringList(imageList3, InputDirectory3); //read all image-names
-		check=check1 && check2 && check3;
-		break;
-	}
+		case 1:
+			InputDirectory1=set.InputDirectory1;
+			check1=readStringList(imageList1, InputDirectory1); //read all image-names
+			check=check1;
+			break;
+		case 2:
+			InputDirectory1=set.InputDirectory1;
+			InputDirectory2=set.InputDirectory2;
+			check1=readStringList(imageList1, InputDirectory1); //read all image-names
+			check2=readStringList(imageList2, InputDirectory2); //read all image-names
+			check=check1 && check2;
+			break;
+		case 3:
+			InputDirectory1=set.InputDirectory1;
+			InputDirectory2=set.InputDirectory2;
+			InputDirectory3=set.InputDirectory3;
+			check1=readStringList(imageList1, InputDirectory1); //read all image-names
+			check2=readStringList(imageList2, InputDirectory2); //read all image-names
+			check3=readStringList(imageList3, InputDirectory3); //read all image-names
+			check=check1 && check2 && check3;
+			break;
+		}
 
-	// Check if image-names are successfully loaded
-	if(check){
-		cout<<"image-names/filenames loaded"<<endl;
-		nimages=imageList1.size(); //number of images
-	}
-	else{
-		cout<<"Images/files could not be loaded"<<endl;
-		exit(1);
-	}
-	int images_thread=nimages/s.ThreadAmount;
+		// Check if image-names are successfully loaded
+		if(check){
+			cout<<"image-names loaded"<<endl;
+			nimages=imageList1.size(); //number of images
+		}
+		else{
+			cout<<"Images could not be loaded"<<endl;
+			exit(1);
+		}
+	omp_set_dynamic(0);
+	omp_set_num_threads(set.ThreadAmount);
+	vector<vector<real_1d_array> >CoefficientsList(set.ThreadAmount); // Output list of coefficients
+	vector<real_1d_array> prevCoefficientsList(set.ThreadAmount);
+
+
+	size_t images_thread=nimages/set.ThreadAmount;
+	double prevprev;
+
 	#pragma omp parallel
 	{
 		#pragma omp for nowait
-		for(size_t j=0;j<s.ThreadAmount;j++){
-		for(size_t i=j*images_thread;i<(j+1)*images_thread;i++) // Loop over all images
-		{
-			int tid = omp_get_thread_num();
+		for(size_t j=0;j<set.ThreadAmount;j++){
 
-			vector<vector<Corner> > pixels(s.NumberOfCameras);
-			// Detect corners in image i
+
+			for(size_t i=j*images_thread;i<(j+1)*images_thread;i++){ // Loop over all images
+				vector<Mat> Images;
+				Mat image, image2, image3;
+				switch(set.NumberOfCameras){
+
+						case 1:
+							image=imread(imageList1[i],0);
+							undistort(image, image2, cam1.K, cam1.distCoeffs, noArray() );
+							Images.push_back(image2);
+							break;
+						case 2:
+							image=imread(imageList1[i],0);
+							undistort(image, image2, cam1.K, cam1.distCoeffs, noArray() );
+							Images.push_back(image2);
+							image=imread(imageList2[i],0);
+							image2=Mat();
+							undistort(image, image2, cam2.K, cam2.distCoeffs, noArray() );
+							Images.push_back(image2);
+							break;
+						case 3:
+							image=imread(imageList1[i],0);
+							undistort(image, image2, cam1.K, cam1.distCoeffs, noArray() );
+							Images.push_back(image2);
+							image=imread(imageList2[i],0);
+							image2=Mat();
+							undistort(image, image2, cam2.K, cam2.distCoeffs, noArray() );
+							Images.push_back(image2);
+							image=imread(imageList3[i],0);
+							image3=Mat();
+							undistort(image, image3, cam3.K, cam3.distCoeffs, noArray() );
+							Images.push_back(image3);
+							break;
+						default:
+							cout<<"Error camera amount"<<endl;
+							exit(1);
+				}
+				optimizers[j].changeImages(Images);
+				minlmstate state;
+				minlmreport rep;
+				void *ptr;
+				ptr=&optimizers[j];
+
 			if(i-j*images_thread>0.1){
-			
-			switch(s.NumberOfCameras){
 
-							case 1:
-								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1, res+s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
-								break;
-							case 2:
-								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1,  res+ s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
-								pixels[1]=readFeaturesImage( imageList2[nimages-i-1], cam2,   res+s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][1]);
-								break;
-							case 3:
-								pixels[0]=readFeaturesImage( imageList1[nimages-i-1], cam1,  res+ s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][0]);
-								pixels[1]=readFeaturesImage( imageList1[nimages-i-1], cam2,  res+ s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][1]);
-								pixels[2]=readFeaturesImage( imageList3[nimages-i-1], cam3,  res+ s.OutputDirectory3+"/Frame_"+ToString(i)+".txt", s, prevPixels[tid][2]);
-								break;
-							default:
-								cout<<"Error camera amount"<<endl;
-								exit(1);
-						}
-			}else{
-				switch(s.NumberOfCameras){
+				vector<uchar> E1=errorfunction(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[0], optimizers[j].Images[0], prevCoefficientsList[j], optimizers[j].centerPoint, set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
+				vector<uchar> E2;
+				if(set.NumberOfCameras>1)
+					E2=errorfunction(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[1], optimizers[j].Images[1], prevCoefficientsList[j], Point2f(0,0), set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
 
-							case 1:
-								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1, res+ s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
-								break;
-							case 2:
-								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1,  res+s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
-								pixels[1]=readFeaturesFirstImage( imageList2[nimages-i-1], cam2,  res+s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s);
-								break;
-							case 3:
-								pixels[0]=readFeaturesFirstImage( imageList1[nimages-i-1], cam1, s.OutputDirectory1+"/Frame_"+ToString(i)+".txt", s);
-								pixels[1]=readFeaturesFirstImage( imageList2[nimages-i-1], cam2, s.OutputDirectory2+"/Frame_"+ToString(i)+".txt", s);
-								pixels[2]=readFeaturesFirstImage( imageList3[nimages-i-1], cam3, s.OutputDirectory3+"/Frame_"+ToString(i)+".txt", s);
-								break;
-							default:
-								cout<<"Error camera amount"<<endl;
-								exit(1);
-						}
-			}
-			prevPixels[tid]=pixels;
-			vector<double> E1, E2, E3, E4, E5, E6; // Errors corresponding to the previous coefficient-sets
-			optimizers[tid].changePixels(pixels); // Change frameOptimizer to corner-list which requires optimization for this frame
-			
-			// Starting from 6th image: find best initial guess out of 5 previous time step and first initial guess (flat surface)
-			if(i-j*images_thread>4){
-				E1=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, (int) InitialCoeffs.length(), optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], InitialCoeffs);
-				E2=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], CoefficientsList[tid][i-j*images_thread-1]);
-				E3=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], CoefficientsList[tid][i-j*images_thread-2]);
-				E4=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], CoefficientsList[tid][i-j*images_thread-3]);
-				E5=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], CoefficientsList[tid][i-j*images_thread-4]);
-				E6=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], CoefficientsList[tid][i-j*images_thread-5]);
+				double temp=prevCoefficientsList[j][0];
+				if(i>1){
+					cout<<prevprev<<endl;
+					temp=prevCoefficientsList[j][0]-prevprev;
+								}
+				prevprev=prevCoefficientsList[j][0];
+				if(temp>0)
+					prevCoefficientsList[j][0]=prevCoefficientsList[j][0]+1;
+				else prevCoefficientsList[j][0]=prevCoefficientsList[j][0]-1;
+				cout<<prevCoefficientsList[j][0]<<endl;
 
-			}
 
-			if(s.NumberOfCameras>1){ // Procedure for more than 1 camera
-				
-			// Starting from 6th image: find best initial guess out of 5 previous time step and first initial guess (flat surface)
-			if(i-j*images_thread>4){
-				vector<double>E11=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, (int) InitialCoeffs.length(),optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], InitialCoeffs);
-				E1.insert( E1.end(), E11.begin(), E11.end() );
-				vector<double>E22=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], CoefficientsList[tid][i-j*images_thread-1]);
-				E2.insert( E2.end(), E22.begin(), E22.end() );
-				vector<double>E33=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], CoefficientsList[tid][i-j*images_thread-2]);
-				E3.insert( E3.end(), E33.begin(), E33.end() );
-				vector<double>E44=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], CoefficientsList[tid][i-j*images_thread-3]);
-				E4.insert( E4.end(), E44.begin(), E44.end() );
-				vector<double>E55=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], CoefficientsList[tid][i-j*images_thread-4]);
-				E5.insert( E5.end(), E55.begin(), E55.end() );
-				vector<double>E66=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], CoefficientsList[tid][i-j*images_thread-5]);
-				E6.insert( E6.end(), E66.begin(), E66.end() );
-			}
-			}
-			if(s.NumberOfCameras>2){ // Procedure for 3 cameras
+				//bndl[0]=prevCoefficientsList[j][0]-5;
+				//bndu[0]=prevCoefficientsList[j][0]+5;
 
-			// Starting from 6th image: find best initial guess out of 5 previous time step and first initial guess (flat surface)
-			if(i-j*images_thread>4){
-				vector<double>E111=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, (int) InitialCoeffs.length(),optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], InitialCoeffs);
-				E1.insert( E1.end(), E111.begin(), E111.end() );
-				vector<double>E222=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], CoefficientsList[tid][i-j*images_thread-1]);
-				E2.insert( E2.end(), E222.begin(), E222.end() );
-				vector<double>E333=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], CoefficientsList[tid][i-j*images_thread-2]);
-				E3.insert( E3.end(), E333.begin(), E333.end() );
-				vector<double>E444=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], CoefficientsList[tid][i-j*images_thread-3]);
-				E4.insert( E4.end(), E444.begin(), E444.end() );
-				vector<double>E555=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], CoefficientsList[tid][i-j*images_thread-4]);
-				E5.insert( E5.end(), E555.begin(), E555.end() );
-				vector<double>E666=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], CoefficientsList[tid][i-j*images_thread-5]);
-				E6.insert( E6.end(), E666.begin(), E666.end() );
+				minlmcreatev(E1.size() +E2.size(), prevCoefficientsList[j], optimizers[j].DiffStep, state);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				minlmcreatev(E1.size() +E2.size(), prevCoefficientsList[j], optimizers[j].DiffStep/2, state);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				minlmcreatev(E1.size() +E2.size(), prevCoefficientsList[j], optimizers[j].DiffStep/10, state);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				// Repeat refining differentiation step until difference in water depth during refinement is less than hard-coded limit (0.05 mm)
+				bool repeat=true;
+				double num=20;
+				while(repeat){
+					double temporary=prevCoefficientsList[j][0];
+					minlmcreatev(E1.size() +E2.size(), prevCoefficientsList[j], optimizers[j].DiffStep/num, state);
+					minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+					alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+					minlmresults(state, prevCoefficientsList[j], rep);
+					num=num+20;
+					cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+					if(abs(prevCoefficientsList[j][0]-temporary)<0.05)repeat=false;
 				}
+			CoefficientsList[j].push_back(prevCoefficientsList[j]);
 			}
+			else{
 
-			// Do optimization with list of sorted corner-sets
-			real_1d_array coefficients;
-			
-			if(i-j*images_thread<1){ //For images 0-4: use predetermined initial guess
-				coefficients = optimizeCoef(InitialCoeffs, optimizers[tid]);
-						}
+				/* Example to compute middle of approximate reconstructed surface area
+				   Used in paper during validation on still water
 
-			if(i-j*images_thread<5){ //For images 0-4: use predetermined initial guess
-			coefficients = optimizeCoef(InitialCoeffs, optimizers[tid]);
+				prevCoefficientsList[j]="[118.1555]";
+				real_1d_array bndl="[85]";
+				real_1d_array bndu = "[90]";
+				vector<uchar> E=errorfunction(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[0], optimizers[j].Images[0], prevCoefficientsList[j], Point2f(0,0), set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
+
+				minlmcreatev(E.size() , prevCoefficientsList[j], optimizers[j].DiffStep, state);
+				//alglib::minlmsetbc(state, bndl, bndu);
+				//minlmsetscale(state, scale);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				//cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				minlmcreatev(E.size(), prevCoefficientsList[j], optimizers[j].DiffStep/2, state);
+				//alglib::minlmsetbc(state, bndl, bndu);
+				//minlmsetscale(state, scale);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				//cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				minlmcreatev(E.size(), prevCoefficientsList[j], optimizers[j].DiffStep/4, state);
+				//alglib::minlmsetbc(state, bndl, bndu);
+				//minlmsetscale(state, scale);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				//cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				minlmcreatev(E.size(), prevCoefficientsList[j], optimizers[j].DiffStep/8, state);
+				//alglib::minlmsetbc(state, bndl, bndu);
+				//minlmsetscale(state, scale);
+				minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+				alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+				minlmresults(state, prevCoefficientsList[j], rep);
+				cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+				bndl="[85,-3,-3]";
+
+				bndu = "[75,3,3]";
+				Point2f M=computeMiddle(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[0], optimizers[j].Images[0], prevCoefficientsList[j], set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
+
+				optimizers[j].centerPoint=M;
+				ptr=&optimizers[j];
+				cout<<"Approximate centre reconstructed area: "<<M<<endl;
+			*/
+
+			prevCoefficientsList[j]="[75.22639,-3.51127]";
+			vector<uchar> E1=errorfunction(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[0], optimizers[j].Images[0], prevCoefficientsList[j], Point2f(0,0), set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
+			vector<uchar> E2;
+			if(set.NumberOfCameras>1)
+				E2=errorfunction(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[1], optimizers[j].Images[1], prevCoefficientsList[j], Point2f(0,0), set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
+
+			minlmcreatev(E1.size() +E2.size() , prevCoefficientsList[j], optimizers[j].DiffStep, state);
+			minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+			alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+			minlmresults(state, prevCoefficientsList[j], rep);
+			cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+			minlmcreatev(E1.size() +E2.size() , prevCoefficientsList[j], optimizers[j].DiffStep/5, state);
+			minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+			alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+			minlmresults(state, prevCoefficientsList[j], rep);
+			cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+			minlmcreatev(E1.size() +E2.size() , prevCoefficientsList[j], optimizers[j].DiffStep/15, state);
+			minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+			alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+			minlmresults(state, prevCoefficientsList[j], rep);
+			cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+
+			minlmcreatev(E1.size() +E2.size() , prevCoefficientsList[j], optimizers[j].DiffStep/50, state);
+			minlmsetcond(state, optimizers[j].Epsg, optimizers[j].Epsf, optimizers[j].Epsx, optimizers[j].MaxIts);
+			alglib::minlmoptimize(state, combinedErrorFunction, NULL, ptr); //optimize
+			minlmresults(state, prevCoefficientsList[j], rep);
+			cout<<imageList1[i]<<"\t"<<prevCoefficientsList[j].tostring(5).c_str()<<endl;
+			CoefficientsList[j].push_back(prevCoefficientsList[j]);
+
 			}
-			else{ //For images i>4 -> use initial guess that gives lowest total error
-				
-				vector<double> S(6); //Vector containing sum of errors
-				std::for_each(E1.begin(), E1.end(), [&] (double n) { S[0] += (nancheck(n) ? 0.0 : n);});
-				std::for_each(E2.begin(), E2.end(), [&] (double n) { S[1] += (nancheck(n) ? 0.0 : n);});
-				std::for_each(E3.begin(), E3.end(), [&] (double n) { S[2] += (nancheck(n) ? 0.0 : n);});
-				std::for_each(E4.begin(), E4.end(), [&] (double n) { S[3] += (nancheck(n) ? 0.0 : n);});
-				std::for_each(E5.begin(), E5.end(), [&] (double n) { S[4] += (nancheck(n) ? 0.0 : n);});
-				std::for_each(E6.begin(), E6.end(), [&] (double n) { S[5] += (nancheck(n) ? 0.0 : n);});
-				auto result=min_element(S.begin(),S.end());
-				int dist=std::distance(S.begin(), result);
-				switch(dist){
-					case 0:
-						//cout<<"Error S[0]: "<<S[0]<<endl;
-						coefficients = optimizeCoef(InitialCoeffs, optimizers[tid]);
-						break;
-					case 1:
-						//cout<<"Error S[1]: "<<S[1]<<endl;
-						coefficients = optimizeCoef(CoefficientsList[tid][i-j*images_thread-1], optimizers[tid]);
-						break;
-					case 2:
-						//cout<<"Error S[2]: "<<S[2]<<endl;
-						coefficients = optimizeCoef(CoefficientsList[tid][i-j*images_thread-2], optimizers[tid]);
-						break;
-					case 3:
-						//cout<<"Error S[3]: "<<S[2]<<endl;
-						coefficients = optimizeCoef(CoefficientsList[tid][i-j*images_thread-3], optimizers[tid]);
-						break;
-					case 4:
-						//cout<<"Error S[4]: "<<S[4]<<endl;
-						coefficients = optimizeCoef(CoefficientsList[tid][i-j*images_thread-4], optimizers[tid]);
-						break;
-					case 5:
-						//cout<<"Error S[5]: "<<S[5]<<endl;
-						coefficients = optimizeCoef(CoefficientsList[tid][i-j*images_thread-5], optimizers[tid]);
-						break;
-					default:
-						cout<<"Error sums"<<endl;
-						exit(1);
-					}
-				}
-			// Store optimized coefficients
-			CoefficientsList[tid].push_back(coefficients);
-
-			if(s.SaveResiduals)
-			{ // Save errors corresponding to optimized coefficients
-				
-				// Compute errors corresponding to optimized coefficients for camera 1
-				vector<double> Error;
-				switch (s.NumberOfCameras){
-				case 1:{
-					Error=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric,optimizers[tid].Params, optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], coefficients);
-					break;}
-				case 2:{
-					Error=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric,optimizers[tid].Params, optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], coefficients);
-					vector<double> Temp=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], coefficients);
-					Error.insert( Error.end(), Temp.begin(), Temp.end() ); //Concatenate errors of camera 2 to total error-vector
-					break;}
-				case 3:{
-					Error=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric, optimizers[tid].Params,optimizers[tid].Cameras[0], optimizers[tid].Pixels[0], optimizers[tid].fs[0], coefficients);
-					vector<double> Temp=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric,optimizers[tid].Params, optimizers[tid].Cameras[1], optimizers[tid].Pixels[1], optimizers[tid].fs[1], coefficients);
-					Error.insert( Error.end(), Temp.begin(), Temp.end() ); //Concatenate errors of camera 2 to total error-vector
-					Temp=compute_error(optimizers[tid].Lx, optimizers[tid].Ly, optimizers[tid].ErrorMetric,optimizers[tid].Params, optimizers[tid].Cameras[2], optimizers[tid].Pixels[2], optimizers[tid].fs[2], coefficients);
-					Error.insert( Error.end(), Temp.begin(), Temp.end() ); //Concatenate errors of camera 2 to total error-vector
-					break;}
-				default:
-					cout<<"Error camera amount"<<endl;
-					exit(1);
-				}
-			double S;
-				// Compute mean over all features and save it into errorlist
-				std::for_each(Error.begin(), Error.end(), [&] (double n) { S += (nancheck(n) ? 0.0 : n);}); 
-				ErrorList[tid].push_back(S/Error.size());}
-
 		}
-			}}
+		}
 
+	}
 
-	//Write results to files
-
-	writeArray(CoefficientsList, s.OutputFileName, res);
-	if(s.SaveResiduals)
-	{writeArrayErrors(ErrorList, s.OutputFileNameResiudals, res);}
-	std::chrono::steady_clock::time_point end1= std::chrono::steady_clock::now();
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end1 - begin1).count() <<std::endl;
-
+	writeArray(CoefficientsList, set.OutputFileName, "");
 	timestamp ( );
     cout << "\n";
     cout << "Surface reconstruction \n";

@@ -78,24 +78,21 @@ template <class Type> class Normals_constant;
 template <class Type> class Normals_1storder;
 template <class Type> class Normals_2ndorder;
 template <class Type> class Normals_3rdorder;
+template <class Type> class Normals_Paper;
 template <class Type> class distance_to_Line;
 template <class Type> class distance_to_Point;
 template <class Type> class Angle;
 template <class Type> class Angle2;
-template <class Type> class error_I;
 template <class Type> class waterSurface_constant;
 template <class Type> class waterSurface_1storder;
 template <class Type> class waterSurface_2ndorder;
 template <class Type> class waterSurface_3rdorder;
-template <class Type> class imagePoints;
-template <class Type> class imagePoints2;
+template <class Type> class waterSurface_Paper;
 struct arrange1;
 struct arrange2;
 struct arrange3;
 template <class T> struct prod;
 template <class T> struct prod2;
-template <class T> struct shiftPixels;
-template <class T> struct error_col;
 template <class T> struct Waterray;
 template <class T> struct axis;
 template <class T> struct Homogenous;
@@ -166,7 +163,6 @@ public:
 	Mat T;
 	Mat K;
 	Point3f c;
-	vector<Point3f> f;
 	Mat distCoeffs;
 
 public:
@@ -178,33 +174,32 @@ public:
 		T=cpy.T.clone();
 		K=cpy.K.clone();
 		c=Point3f(cpy.c.x,cpy.c.y,cpy.c.z);
-		f=cpy.f;
 		distCoeffs=cpy.distCoeffs.clone();
 	}
-	CameraParams (Mat i_R, Mat i_T, Mat i_K, Point3f i_c, Mat i_distCoeffs, vector<Point3f> i_f) {
+	CameraParams (Mat i_R, Mat i_T, Mat i_K, Point3f i_c, Mat i_distCoeffs) {
 
         R=i_R;
         T=i_T;
         K=i_K;
         c=i_c;
-        f=i_f;
         distCoeffs=i_distCoeffs;
     }
 
 };
-
-class frameOptimizer
-{ ///Class to store optimization settings, including cameras (with parameters) and vector-list of point coordinates q'
+class imageOptimizer
+{
 public:
 
 	// Camera set-up and surface model parameters
 	size_t NumberOfCameras;
 	vector<CameraParams> Cameras;
-	int ErrorMetric;
+	real_1d_array Scaling;
 	int Params;
 	float Lx;
 	float Ly;
-	real_1d_array Scaling;
+	uchar minThreshold;
+	uchar maxThreshold;
+	int gridSize;
 
 	// Optimization parameters
 	double Epsg;
@@ -214,77 +209,89 @@ public:
 	double DiffStep;
 
 	// Input per image
-	vector<vector<Point3f> > Pixels;
-	vector<vector<Point3f> > fs;
+	vector<Mat> Images;
+	Point2f centerPoint;
+	int min_u;
+	int max_u;
+	int min_v;
+	int max_v;
 
 public:
 	// Constructors
-	frameOptimizer (){
+	imageOptimizer (){
 		NumberOfCameras=0;
 		vector<CameraParams> Cameras;
-		ErrorMetric=0;
+		Scaling="[0]";
 		Params=0;
 		Lx=0;
 		Ly=0;
-		Scaling="[0]";
+		minThreshold=0;
+		maxThreshold=0;
+		gridSize=0;
+
 		Epsg=0;
 		Epsf=0;
 		Epsx=0;
 		MaxIts=0;
 		DiffStep=0;
+		centerPoint=Point2f();
+		min_u=0;
+		max_u=0;
+		min_v=0;
+		max_v=0;
+
 	}
-	frameOptimizer (const frameOptimizer& cpy){
+	imageOptimizer (const imageOptimizer& cpy){
 		NumberOfCameras=cpy.NumberOfCameras;
 		Cameras=cpy.Cameras;
-		ErrorMetric=cpy.ErrorMetric;
+		minThreshold=cpy.minThreshold;
+		maxThreshold=cpy.maxThreshold;
+		gridSize=cpy.gridSize;
+		Scaling=cpy.Scaling;
 		Params=cpy.Params;
 		Lx=cpy.Lx;
 		Ly=cpy.Ly;
-		Scaling=cpy.Scaling;
 		Epsg=cpy.Epsg;
 		Epsf=cpy.Epsf;
 		Epsx=cpy.Epsx;
 		MaxIts=cpy.MaxIts;
 		DiffStep=cpy.DiffStep;
-		Pixels=cpy.Pixels;
-		fs=cpy.fs;
+		Images=cpy.Images;
+		centerPoint=cpy.centerPoint;
+		min_u=cpy.min_u;
+		max_u=cpy.max_u;
+		min_v=cpy.min_v;
+		max_v=cpy.max_v;
 		}
-	frameOptimizer (int i_NumberOfCameras, vector<CameraParams> i_Cameras, int i_ErrorMetric, int i_Params, float i_Lx, float i_Ly, string i_Scaling, double i_epsg, double i_epsf, double i_epsx, int i_maxits, double i_diffStep) {
+	imageOptimizer (int i_NumberOfCameras, vector<CameraParams> i_Cameras, int i_Params, float i_Lx, float i_Ly, uchar i_minThreshold, uchar i_maxThreshold,
+		int i_gridSize, string i_Scaling, double i_epsg, double i_epsf, double i_epsx, int i_maxits, double i_diffStep, int i_min_u, int i_max_u, int i_min_v, int i_max_v) {
 
 		NumberOfCameras=i_NumberOfCameras;
 		Cameras=i_Cameras;
-		ErrorMetric=i_ErrorMetric;
+		Scaling = i_Scaling.c_str();
 		Params=i_Params;
 		Lx=i_Lx;
 		Ly=i_Ly;
-		Scaling = i_Scaling.c_str();
+		minThreshold=i_minThreshold;
+		maxThreshold=i_maxThreshold;
+		gridSize=i_gridSize;
 
 		Epsg=i_epsg;
 		Epsf=i_epsf;
 		Epsx=i_epsx;
 		MaxIts=i_maxits;
 		DiffStep=i_diffStep;
-    }
-	// Change set of image points for which optimization is run
-	void changePixels(vector<vector<Corner> > i_Corners)
-	{
-		// Reset vector of features f and pixel coordinates
-		fs=vector<vector<Point3f> >(NumberOfCameras);
-		Pixels=vector<vector<Point3f> >(NumberOfCameras);
-
-		// Fill in updated values
-		for(size_t i =0; i<NumberOfCameras; i++){
-			for(size_t j=0; j<i_Corners[i].size(); j++){
-				if(i_Corners[i][j].getFound()){
-					Pixels[i].push_back(i_Corners[i][j].getCoords());
-					fs[i].push_back(Cameras[i].f[j]);
-				}
-			}
-		}
+		min_u=i_min_u;
+		max_u=i_max_u;
+		min_v=i_min_v;
+		max_v=i_max_v;
 	}
 
-
-};
+	void changeImages(vector<Mat> newImages)
+	{
+		Images=newImages;
+		}
+ };
 class Settings
 { /// Settings class for reconstruction
 public:
@@ -300,20 +307,13 @@ public:
     { ///Read node in settings file
 		node["NumberOfCameras"]  >> NumberOfCameras;
 		node["TypeCameraPose"]  >> TypeCameraPose;
-        node["TypeFeatureInput"]  >> TypeFeatureInput;
         node["ThreadAmount"]  >> ThreadAmount;
-        
         node["SaveCameraPose"]  >> SaveCameraPose;
-        node["SaveFeatureCoordinates"]  >> SaveFeatureCoordinates;
-        node["SaveResiduals"]  >> SaveResiduals;
         node["ShowCorners"]  >> ShowCorners;
 
         node["InputDirectory1"]  >> InputDirectory1;
         node["InputDirectory2"]  >> InputDirectory2;
         node["InputDirectory3"]  >> InputDirectory3;
-        node["InputFeatures1"] >> InputFeatures1;
-        node["InputFeatures2"] >> InputFeatures2;
-        node["InputFeatures3"] >> InputFeatures3;
         node["InputInitial1"] >> InputInitial1;
         node["InputInitial2"] >> InputInitial2;
         node["InputInitial3"] >> InputInitial3;      
@@ -332,20 +332,19 @@ public:
         node["OutputDirectory2"]  >> OutputDirectory2;
         node["OutputDirectory3"]  >> OutputDirectory3;
         node["OutputFileName"]  >> OutputFileName;
-        node["OutputFileNameResiudals"]  >> OutputFileNameResiudals;
+        node["OutputFileCenters"]  >> OutputFileCenters;
         
-        node["FeaturePatternSize_Width" ] >> FeaturePatternSize.width;
-        node["FeaturePatternSize_Height"] >> FeaturePatternSize.height;
         node["Lx"]  >> Lx;
         node["Ly"]  >> Ly;
         node["RefPatternSize_Width" ] >> RefPatternSize.width;
         node["RefPatternSize_Height"] >> RefPatternSize.height;
+        node["gridSize" ] >> gridSize;
+
 
         node["DiffStep"]  >> DiffStep;
         node["Epsf"]  >> Epsf;
         node["Epsg"]  >> Epsg;        
         node["Epsx"]  >> Epsx;      
-        node["ErrorMetric"]  >> ErrorMetric;
         node["InitialGuess"]  >> InitialGuess;
         node["MatchesThreshold"]  >> MatchesThreshold;
         node["MaxIts"]  >> MaxIts;
@@ -354,7 +353,14 @@ public:
         node["SurfaceModelParameters"]  >> SurfaceModelParameters;
         node["ResponseThreshold"]  >> ResponseThreshold;
         node["ResponseRadius"]  >> ResponseRadius;
-             }
+        node["minThreshold"]  >> minThreshold;
+        node["maxThreshold"]  >> maxThreshold;
+        node["min_u"]  >> min_u;
+        node["max_u"]  >> max_u;
+        node["min_v"]  >> min_v;
+        node["max_v"]  >> max_v;
+
+    }
 
    static bool readStringList(vector<string>& l, string dir )
     { ///Read all files in directory and store in vector string
@@ -392,23 +398,17 @@ public:
 
     //General settings
     int NumberOfCameras;		 // Number of cameras's used
-   	bool TypeFeatureInput;		 // Type of input for surface reconstruction: true(1) for images, false (0) for file
    	bool TypeCameraPose;		 // Type of input for camera pose estimation: true(1) for image, false (0) for file
    	int ThreadAmount;			 // Number of threads used to parallelize
    	
    	//Output settings
     bool SaveCameraPose;		 // Save camera pose estimation in file
-    bool SaveFeatureCoordinates; // Save feature coordinates (pixels) to text file
- 	bool SaveResiduals;			 // Write mean resiudal error over all image points out to file
   	bool ShowCorners;			 // Show Detected corners in each image
    	
    	//Input
  	string InputDirectory1;      // The name of the directory of images - camera 1
     string InputDirectory2;      // The name of the directory of images - camera 2
   	string InputDirectory3;      // The name of the directory of images - camera 3
- 	string InputFeatures1;		 // The name of the file of fixed locations of features viewed by camera 1
- 	string InputFeatures2;		 // The name of the file of fixed locations of features viewed by camera 2
- 	string InputFeatures3;		 // The name of the file of fixed locations of features viewed by camera 3 
  	string InputInitial1;		 // The name of the file of vertex locations during camera pose estimation - camera 1
  	string InputInitial2;		 // The name of the file of vertex locations during camera pose estimation - camera 2
  	string InputInitial3;		 // The name of the file of vertex locations during camera pose estimation - camera 3
@@ -429,20 +429,19 @@ public:
  	string OutputDirectory2;	 // The name of the output-directory for feature coordinates (pixels) - camera 2
  	string OutputDirectory3;	 // The name of the output-directory for feature coordinates (pixels) - camera 3
     string OutputFileName;		 // Name of output-file coefficients
-    string OutputFileNameResiudals; // Name of output-file of residual errors
+    string OutputFileCenters; 	 // Name of output-file of centers of reconstructed area
 
     //Detection parameters
-	Size FeaturePatternSize;     // The size of the feature pattern -> Number of items by width and height
     float Lx;					 // Length scale in (lateral) x-direction
     float Ly;					 // Length scale in (streamwise) y-direction 
     Size RefPatternSize;         // The size of the reference board -> Number of items by width and height
+    int gridSize;				 // Size of checquerboard squares
 
     //Optimization parameters
     double DiffStep;			 // Numerical differentiation step (calculation gradient)
     double Epsf;				 // Min function change as stopping condition
     double Epsg;				 // Min Gradient norm as stopping condition
     double Epsx;				 // Min step size as stopping condition
-    int ErrorMetric;		 	 // Type of error metric used
     string InitialGuess;	 	 // Initial guess for coefficients according to model (length=SurfaceModelParameters)
     float MatchesThreshold;		 // Threshold of maximum distance (pixels) between predicted and detected feature point
     int MaxIts;					 // Max amount of iterations for optimization procedure
@@ -451,6 +450,12 @@ public:
     int SurfaceModelParameters;	 // Number of coefficients/parameters in surface model
     int ResponseRadius;			 // Radius for calculation error measure
     float ResponseThreshold;	 // Threshold for corner response to keep interesting points
+    uchar minThreshold;			 // Minimum Image intensity Imin
+    uchar maxThreshold;			 // Maximum Image intensity Imax
+	int min_u;					 // Minimum u-coordinate of reconstructed image area
+	int max_u;					 // Maximum u-coordinate of reconstructed image area
+	int min_v;					 // Minimum v-coordinate of reconstructed image area
+    int max_v;					 // Maximum v-coordinate of reconstructed image area
 
 };
 

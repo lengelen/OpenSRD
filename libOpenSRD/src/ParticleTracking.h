@@ -29,7 +29,7 @@ inline void removedupes(std::vector<Point2f> & vec); // Removes doubles in list 
 inline bool point_comparator( cv::Point3f a, cv::Point3f b); // Comparison function of Point3f
 
 /// Functions to detect or process feature points
-
+vector<Point2f> create_points_OpenCV(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size boardSize, Mat cameraMatrix, Mat distCoeffs, bool showCorners); // Do all operations on image to obtain a sorted list of corner points
 vector<Point2f> create_points(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size boardSize, Mat cameraMatrix, Mat distCoeffs, bool showCorners); // Do all operations on image to obtain a sorted list of corner points
 vector<Point2f> sortPattern(vector<Point2f> corners, Size boardSize);
 vector<Corner> findCorrespondances(vector<Point2f> candidates, vector<Corner> prevCorners);
@@ -44,12 +44,5 @@ inline Mat getPoints5(Mat image, size_t x, size_t y);
 inline Mat getPoints10(Mat image, size_t x, size_t y);
 inline Mat corner_detect5(const size_t h, const size_t w,  Mat image);
 inline Mat corner_detect10(const size_t h, const size_t w,  Mat image);
-
-/// Master functions to detect and update corners in images
-
-vector<Corner> createCornerList(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size PatternSize, Mat cameraMatrix, Mat distCoeffs, bool showCorners);
-vector<Corner> updateCornerlist(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Mat cameraMatrix, Mat distCoeffs, bool showCorners, vector<Corner> prevCorners);
-vector<Corner> readFeaturesImage(string name, CameraParams cam, string OutputName, Settings s, vector<Corner> prevCorners);
-vector<Corner> readFeaturesFirstImage(string name, CameraParams cam, string OutputName, Settings s);
 
 #endif /* PARTICLETRACKING_H_ */

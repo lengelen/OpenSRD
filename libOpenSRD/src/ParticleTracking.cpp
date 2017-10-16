@@ -333,6 +333,20 @@ vector<Point2f> sortPattern(vector<Point2f> corners, Size boardSize)
 	transform(anglesOrigin.begin(), anglesOrigin.end(), PointsNoOrigin.begin(), reduce_Z<Point2f>());
 
 	vector<Point2f> extremesSorted={extremes[0], PointsNoOrigin[2], PointsNoOrigin[0],PointsNoOrigin[1]};
+	/*Mat image=imread("/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/Cam1/Processed/000000000000034.jpg (green).png",0);
+				namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
+				resizeWindow("Display window", 1200, 800);
+				circle( image, extremesSorted[0], 10, Scalar(255,255,255), 1, 8, 0 ); // show point located closest
+				circle( image, extremesSorted[0], 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+				circle( image, extremesSorted[1], 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
+				circle( image, extremesSorted[1], 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+					circle( image, extremesSorted[2], 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+					circle( image, extremesSorted[2], 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
+					circle( image, extremesSorted[3], 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+								circle( image, extremesSorted[3], 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
+				char fff;
+				imshow("Display window", image);
+				fff=waitKey(0);*/
 
 	//Compute steps between two extreme points of lines // y-axis
 	stepX1=(extremesSorted[1].x-extremesSorted[0].x)/(boardSize.width-1);
@@ -340,18 +354,46 @@ vector<Point2f> sortPattern(vector<Point2f> corners, Size boardSize)
 	stepX2=(extremesSorted[3].x-extremesSorted[2].x)/(boardSize.width-1);
 	stepY2=(extremesSorted[3].y-extremesSorted[2].y)/(boardSize.width-1);
 
-
+	Point2f point1=extremesSorted[0];
+	Point2f point2=extremesSorted[2];
+	Point2f prevPoint1, prevPoint2;
 	for(int t=0; t<boardSize.width; t++)
 	{
-		Point2f point1=Point2f(extremesSorted[0].x+t*stepX1,extremesSorted[0].y+t*stepY1); //edge point left
-		Point2f point2=Point2f(extremesSorted[2].x+t*stepX2,extremesSorted[2].y+t*stepY2); //edge point right
+		prevPoint1=point1;
+		prevPoint2=point2;
+		if(t>0){
+		if(t<6){
+		point1=Point2f(prevPoint1.x+stepX1,prevPoint1.y+stepY1*1.1); //edge point left
+		point2=Point2f(prevPoint2.x+stepX2,prevPoint2.y+stepY2*1.1); //edge point right
+		}
+		else{
+			if(t<13){
+				point1=Point2f(prevPoint1.x+stepX1,prevPoint1.y+stepY1*1.05); //edge point left
+				point2=Point2f(prevPoint2.x+stepX2,prevPoint2.y+stepY2*1.05); //edge point right
+			}else{
+			point1=Point2f(prevPoint1.x+stepX1,prevPoint1.y+stepY1*0.95); //edge point left
+			point2=Point2f(prevPoint2.x+stepX2,prevPoint2.y+stepY2*0.95); //edge point right
+			}
 
+		}}
+		/*Mat image=imread("/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/Ref/Cam1/Processed/000000000000034.jpg (green).png",0);
+				namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
+				resizeWindow("Display window", 1200, 800);
+				circle( image, point1, 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
+				circle( image, point1, 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+				circle( image, point1, 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
+				circle( image, point2, 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
+					circle( image, point2, 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+					circle( image, point2, 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
+				char fff;
+				imshow("Display window", image);
+				fff=waitKey(0);*/
 		transform(corners.begin(), corners.end(), distances.begin(), distance_to_Line<Point3f> (point1, point2)); //compute distance to line for all points
 		sort(distances.begin(), distances.end(), sortingZ); //sort points according to distance
 		int k=0;
 		vector <Point2f> temp;
 		for(size_t j=0; j<corners.size(); j++){
-			if(distances[j].z<50 && k<boardSize.height) //threshold of 100 pixels from line and also maximum number of points on one row
+			if(distances[j].z<15 && k<boardSize.height) //threshold of 100 pixels from line and also maximum number of points on one row
 				{
 				temp.push_back(Point2f(distances[j].x,distances[j].y));
 				k++;
@@ -443,9 +485,71 @@ vector<Point2f> removeDoubles(vector<Point2f> points, Mat response, float mindis
 	}
 	return points;
 }
+vector<Point2f> create_points_OpenCV(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size boardSize, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners)
+{ /// Do all operations on image to obtain a sorted list of corner points
+
+	 int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE; //Flags to change if we want to change calibration settings
+		    vector<Point2f> pointbuf;
+
+		    //Find chessboard corners
+		    bool found = findChessboardCorners( img, boardSize, pointbuf, chessBoardFlags );
+		    if (!found)
+				{   cout<<"Corners not found in image "<<endl;
+				cout<<pointbuf.size()<<endl;
+				}
+		    Mat copy=img.clone();
+		if(found)
+		  {
+			Mat response;
+						// Calculate corner strength for every pixel, depending on radius of corner measure
+						if(detectionRadius==5)
+							response = corner_detect5(img.rows, img.cols, img);
+						else if(detectionRadius==10)
+							response = corner_detect10(img.rows, img.cols, img);
+						else{
+							cout<<"What is radius of corner response function?"<<endl;
+							exit(1);
+						}
+
+			for(size_t t=0;t<pointbuf.size();t++){
+			float N=0;
+			Point2f avg=Point2f(0,0);
+			for(int x=(int)pointbuf[t].x-5; x<(int)pointbuf[t].x+6;x++){ // For all points after considered point
+				for(int y=(int)pointbuf[t].y-5; y<(int)pointbuf[t].y+6; y++){ // For all points after considered point
+				float resppoint=response.at<float>(y,x);
+					if(resppoint>ResponseThreshold)	{	//Compute distance
+							avg+=Point2f(x,y)*resppoint;
+								N=N+resppoint;}
+						}
+					}
+			pointbuf[t]=avg/N; //Take weighted average
+			}}
+		/* return pointbuf;
+				float min, max;
+				cv::Point2f min_loc, max_loc;
+				cv::minMaxLoc(img(cv::Rect(pointbuf[t]-5,pointbuf[t]-5,11,11)), &min, &max, &min_loc, &max_loc);
+
+			cornerSubPix( img, pointbuf, Size(5,5),  Size(-1,-1), TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10000, 0.001 )); //refine found corner positions
+*/
+		cornerSubPix( img, pointbuf, Size(5,5),  Size(-1,-1), TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10000, 0.001 )); //refine found corner positions
+
+		    drawChessboardCorners( copy, boardSize, Mat(pointbuf), found ); // Draw corners detected
+		    circle( copy, pointbuf[0], 5, Scalar(150, 150, 150), 1, 8, 0 ); // show point located closest
+		    		circle( copy, pointbuf[0], 10, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
+
+		    		  //Show image with corners
+		    		            namedWindow("Corners found", WINDOW_NORMAL);
+		    					resizeWindow("Corners found", 2000, 1500);
+		    		            imshow("Corners found", copy);
+		    		            waitKey(0);//found ? 500 : 1000);
+
+
+		    return pointbuf;
+}
 vector<Point2f> create_points(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size boardSize, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners)
 { /// Do all operations on image to obtain a sorted list of corner points
 
+    Mat copy=img.clone();
 	int CornerPoints=boardSize.width*boardSize.height; //number of points to be detected
 	Mat response;
 
@@ -467,40 +571,40 @@ vector<Point2f> create_points(Mat img, float ResponseThreshold, float minDistanc
 			if(temp>ResponseThreshold)
 		    		corners.push_back(Point2f(i,j));
 					}
-
 	//Remove pixels that correspond to same corner
 	vector<Point2f> corners2=removeDoubles(corners, response, minDistance);
-
 	if((int)corners2.size()!=CornerPoints){ // Number of individual corner points does not match with grid size
 			namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
-			resizeWindow("Display window", 800, 500);
+			resizeWindow("Display window", 1200, 800);
 			cout<<"error corners-> not all found: "<<corners2.size()<<endl;
 
 			for(size_t t=0; t<corners2.size(); t++){
 				cout<<t<<" corner "<<corners2[t]<<endl;
-				circle( img, corners2[t], 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
+				circle( copy, corners2[t], 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
+				circle( copy, corners2[t], 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+				circle( copy, corners2[t], 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
 				}
 			char k;
-			imshow("Display window", img);
+			imshow("Display window", copy);
 			k=waitKey(0);
 			destroyWindow("Display window");
-	return vector<Point2f>(0); // Return empty vector to alert problem
 	}
+
 	vector<Point2f> sortedcorners=sortPattern(corners2, boardSize);
 	if(ShowCorners){ // Show the detected corners if users requires it
 		namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
-		resizeWindow("Display window", 800, 500);
+		resizeWindow("Display window", 1200, 800);
 		for(size_t t=0; t<sortedcorners.size(); t++){
 					circle( img, sortedcorners[t], 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
-					circle( img, sortedcorners[t], 2
-							, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
-
+					circle( img, sortedcorners[t], 2, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
+					circle( img, sortedcorners[t], 10, Scalar(255, 255, 255), 1, 8, 0 ); // show point located closest
 					}
 			char k;
 			imshow("Display window", img);
 			k=waitKey(0);
 		destroyWindow("Display window");
 	}
+	cout<<sortedcorners.size()<<endl;
 
 	return sortedcorners;
 }
@@ -604,151 +708,4 @@ inline Mat corner_detect10(const size_t h, const size_t w,  Mat image)
 			}
 
 return response;
-}
-
-
-/// Master functions to detect and update corners in images
-
-vector<Corner> createCornerList(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, Size PatternSize, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners)
-{ /// Do all operations on image to create a sorted list of corner points
-  /// Sort them in systematic way
-
-	int CornerPoints=PatternSize.width*PatternSize.height; //number of points to be detected
-	vector<Point2f> PotentialCorners=detectPotentialCorners(img, ResponseThreshold, minDistance, detectionRadius); // Detect candidates based on corner measure
-	if((int)PotentialCorners.size()!=CornerPoints){ // Number of individual corner points does not match with grid size
-			namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
-			resizeWindow("Display window", 800, 500);
-			cout<<"error corners-> not all found: "<<PotentialCorners.size()<<endl;
-
-			for(size_t t=0; t<PotentialCorners.size(); t++){
-				cout<<t<<" corner "<<PotentialCorners[t]<<endl;
-				circle( img, PotentialCorners[t], 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
-				}
-			char k;
-			imshow("Display window", img);
-			k=waitKey(0);
-			destroyWindow("Display window");
-	return vector<Corner>(0); // Return empty vector to alert problem
-	}
-	vector<Point2f> sortedcorners=sortPattern(PotentialCorners, PatternSize); // Sort pattern according to u and v based on patternsize
-	if(ShowCorners){ // Show the detected corners if users requires it
-		namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
-		resizeWindow("Display window", 800, 500);
-		for(size_t t=0; t<sortedcorners.size(); t++){
-					circle( img, sortedcorners[t], 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
-					circle( img, sortedcorners[t], 2
-							, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
-
-					}
-			char k;
-			imshow("Display window", img);
-			k=waitKey(0);
-		destroyWindow("Display window");
-	}
-
-	vector<Point2f> points_undistorted= undistortCorners(sortedcorners, cameraMatrix, distCoeffs ); // Undistort retrieved corner list
-
-	// Create Corner vector from point2f vector
-	vector<Corner> cornerList(points_undistorted.size());
-	vector<int> iD(points_undistorted.size());
-	std::iota (std::begin(iD), std::end(iD), 0);
-	transform(points_undistorted.begin(), points_undistorted.end(),iD.begin(), cornerList.begin(), createCorneriD<Corner>());
-	return cornerList;
-}
-vector<Corner> updateCornerlist(Mat img, float ResponseThreshold, float minDistance, int detectionRadius, float MatchesThreshold, Mat cameraMatrix, Mat distCoeffs, bool ShowCorners, vector<Corner> prevCorners){
-	/// Update already created corner list prevConers
-	/// Use newly detected corners in new image, based on threshold values
-	vector<Point2f> PotentialCorners=detectPotentialCorners(img, ResponseThreshold, minDistance, detectionRadius);
-	if(ShowCorners){ // Show the detected corners if users requires it
-			namedWindow( "Display window", WINDOW_NORMAL );// Create a window for display.
-			resizeWindow("Display window", 800, 500);
-			for(size_t t=0; t<PotentialCorners.size(); t++){
-						circle( img, PotentialCorners[t], 5, Scalar(150, 150, 150), -1, 8, 0 ); // show point located closest
-						circle( img, PotentialCorners[t], 2
-								, Scalar(0, 0, 0), -1, 8, 0 ); // show point located closest
-
-						}
-				char k;
-				imshow("Display window", img);
-				k=waitKey(0);
-			destroyWindow("Display window");
-		}
-	vector<Point2f> points_undistorted= undistortCorners(PotentialCorners, cameraMatrix, distCoeffs ); // Undistort retrieved corner points
-
-	// Match vector of point coordinates with previous locations
-	vector<Corner> nextCorners(prevCorners.size());
-	transform(prevCorners.begin(), prevCorners.end(),nextCorners.begin(), findMatches<Corner>(points_undistorted, MatchesThreshold));
-	return nextCorners;
-}
-vector<Corner> readFeaturesImage(string name, CameraParams cam, string OutputName, Settings s, vector<Corner> prevCorners)
-{ ///Finds all feature points in image, returns vector of matched corners
-  /// If requested write Feature coordinates to file
-	if(s.TypeFeatureInput){ // Detect in images
-
-	Mat view = imread(name, IMREAD_GRAYSCALE); //Reading in starts from last image to first to avoid feature loss due to heavy turbulence
-	if( !view.data )
-		   cout <<"could not load image:"<<name <<endl;
-	//else cout<<".."<<endl;
-
-	// Detect features in image and undistort them
-	vector<Corner> Corners=updateCornerlist(view, s.ResponseThreshold, s.MinDistance, s.ResponseRadius, s.MatchesThreshold, cam.K, cam.distCoeffs, s.ShowCorners, prevCorners);
-
-	if(s.SaveFeatureCoordinates){ // Save to file if requested
-
-		writeVecToFile(Corners, OutputName);}
-	return Corners;
-	}
-	else{ // Read corners from text-file
-	ifstream input;
-		vector<Corner> Corners;
-		input.open(name, std::ifstream::in);
-
-		//Initialization of temporary variables
-		float CoordX, CoordY;
-		int iD;
-		string line;
-
-		while(std::getline(input, line)){ //Keep reading text-files until end of file
-
-			// Input of camera 1
-			istringstream   st(line);
-			st>> iD >>CoordX >> CoordY;
-			Corners.push_back(Corner(Point3f(CoordX, CoordY, 1),iD)); // Append corner location to list of corner points of that time instance
-		}
-		return Corners;}
-}
-vector<Corner> readFeaturesFirstImage(string name, CameraParams cam, string OutputName, Settings s)
-{ ///Finds all feature points in image, returns vector of sorted image points
-  /// If requested write Feature coordinates to file
-
-	if(s.TypeFeatureInput){// Detect corners in images
-	Mat view = imread(name, IMREAD_GRAYSCALE); //Reading in starts from last image to first to avoid feature loss due to heavy turbulence
-	if( !view.data )
-		   cout <<"could not load image:"<<name <<endl;
-	else cout<<".."<<endl;
-
-	// Detect features in image and undistort them
-	vector<Corner> Corners= createCornerList(view, s.ResponseThreshold, s.MinDistance, s.ResponseRadius, s.FeaturePatternSize, cam.K, cam.distCoeffs, s.ShowCorners);
-	if(s.SaveFeatureCoordinates){ // Write coordinates to text file if requested
-		writeVecToFile(Corners, OutputName);}
-	return Corners;
-	}
-	else{ // Read corners from text file
-	ifstream input;
-	vector<Corner> Corners;
-	input.open(name, std::ifstream::in);
-
-	//Initialization of temporary variables
-	float CoordX, CoordY;
-	int iD;
-	string  line;
-
-	while(std::getline(input, line)){ //Keep reading text-files until end of file
-
-		// Input of line
-		istringstream   st(line);
-		st>> iD >> CoordX >> CoordY;
-		Corners.push_back(Corner(Point3f(CoordX, CoordY, 1), iD)); // Append corner location to list of corner points together with iD
-	}
-	return Corners;}
 }

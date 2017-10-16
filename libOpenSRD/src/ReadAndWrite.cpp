@@ -51,26 +51,6 @@ bool readStringList(vector<string>& l, string dir )
 }
 
 // Write functions
-void writeMatToFile(cv::Mat& m, const char* file, string  outputDirectory)
-{ ///write a Float-matrix to output-directory, using filename
-    std::ofstream fout(outputDirectory+file);
-
-    if(!fout)
-    {
-        cout<<"File Not Opened"<<endl;  return;
-    }
-
-    for(int i=0; i<m.rows; i++)
-    {
-        for(int j=0; j<m.cols; j++)
-        {
-            fout<<m.at<float>(i,j)<<"\t";
-        }
-        fout<<endl;
-    }
-
-    fout.close();
-}
 void writeVecToFile(vector<Corner> features, string  path)
 {///write a Float-Vector of corner points to file with path name path
 	std::ofstream fout(path);
@@ -84,6 +64,22 @@ void writeVecToFile(vector<Corner> features, string  path)
               fout<< features[i].getiD()<<"\t" <<features[i].printCoordinates();
               fout <<endl;
     }
+    fout.close();
+}
+void writeCentersToFile(vector<vector<Point2f>> features, string  path)
+{///write a Float-Vector of corner points to file with path name path
+	std::ofstream fout(path);
+    if(!fout)
+    {
+        cout<<"File Not Opened: "<<path<<endl;  return;
+    }
+
+    for(size_t t=0; t<features.size(); t++)
+    {for(size_t i=0; i<features[t].size(); i++)
+	{
+              fout<< features[t][i].x<<"\t" <<features[t][i].y;
+              fout <<endl;
+    }}
     fout.close();
 }
 void writePointsToFile(vector<Point3f> features,  string  file, string outputDirectory)
@@ -119,25 +115,6 @@ void writeArray(vector<vector<real_1d_array> >planes,  string  file, string outp
     		fout <<planes[t][i].tostring(5).c_str()<<endl;
     		}
 	}
-
-    fout.close();
-}
-void writeArrayErrors(vector<vector<double> > errors,  string  file, string outputDirectory)
-{///write an Array of surface coefficients to file with path name out
-    ofstream fout(outputDirectory+file);
-
-    if(!fout)
-    {
-        cout<<"File Not Opened"<<endl;  return;
-    }
-
-
-    //Concatenate vector of vectors
-    	for( size_t t=0; t<errors.size();t++){
-    		for(size_t i=0; i<errors[t].size(); i++)
-    		fout << errors[t][i]<<endl;
-
-    }
 
     fout.close();
 }
