@@ -33,11 +33,11 @@
   <!-- Name of the reference image - camera 3-->
   <InputReference3>"REF3.png"</InputReference3>
   
-  <!-- Name of the calibration file of the camera 1-->
+  <!-- Name of the calibration file of camera 1-->
   <CalibrationFile1>"/home/lengelen/Documents/Doctoraat/Calib/Calib_20170508-2.yml"</CalibrationFile1>
-  <!-- Name of the calibration file of the camera 2-->
+  <!-- Name of the calibration file of camera 2-->
   <CalibrationFile2>"/home/lengelen/Documents/Doctoraat/Calib/Calib_20170508-1.yml"</CalibrationFile2>
-  <!-- Name of the calibration file of the camera 3-->
+  <!-- Name of the calibration file of camera 3-->
   <CalibrationFile3>"Calib_C3.yml"</CalibrationFile3>
   
   <!-- Name of ouput file for saving camera pose estimation camera 1-->
@@ -50,8 +50,7 @@
   <OutputFileName>"/home/lengelen/Documents/Doctoraat/Measurements/Ms20170508/M8/Cam2/ProcA3_1.txt"</OutputFileName>
    <!-- Name of ouput file for center location processed area per frame-->
   <OutputFileCenters>"/home/lengelen/Documents/Doctoraat/Measurements/Ms_20170607/June7-4/Cam1/CentersA2_per10_flatstep5_longnolim.txt"</OutputFileCenters>
- 
-  
+   
   <!-- Length scale in x-direction (lateral direction)(mm)-->
   <Lx>100</Lx>
   <!-- Length scale in y-direction (streamwise direction)(mm)-->
@@ -59,11 +58,9 @@
   <!-- Number of rows and columns of reference pattern -->
   <RefPatternSize_Width>10</RefPatternSize_Width>
   <RefPatternSize_Height>39</RefPatternSize_Height>
-  <!-- Width/length of checquerboard squares-->
+  <!-- Width/length of chequerboard squares-->
   <gridSize>10</gridSize>
   
-
-
   <!-- Numerical differentation step for calculation of gradient-->
   <DiffStep>5</DiffStep>
   <!-- Function-value based stopping condition-->
