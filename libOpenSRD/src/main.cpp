@@ -1782,7 +1782,7 @@ int main ( )
 				cout<<"Approximate centre reconstructed area: "<<M<<endl;
 			*/
 
-			prevCoefficientsList[j]="[75.22639,-3.51127]";
+			prevCoefficientsList[j]=set.InitialGuess.c_str();
 			vector<uchar> E1=errorfunction(false, set.Lx, set.Ly, optimizers[j].gridSize, optimizers[j].Params, optimizers[j].Cameras[0], optimizers[j].Images[0], prevCoefficientsList[j], Point2f(0,0), set.minThreshold, set.maxThreshold, min_u, max_u, min_v, max_v);
 			vector<uchar> E2;
 			if(set.NumberOfCameras>1)
